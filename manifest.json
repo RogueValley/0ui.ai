@@ -1,0 +1,21 @@
+{
+  "short_name": "0nex.ai",
+  "name": "Rogue 0nex LLM Chat Interface",
+  "icons": [
+    {
+      "src": "/Rogue_icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/Rogue_icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#f0f0f0",
+  "theme_color": "#a29bfe",
+  "display": "standalone",
+  "orientation": "portrait-primary"
+}
