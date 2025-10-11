@@ -1,8 +1,12 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Rogue LLM Chat</title>
+    <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
+</head>
+
 <style>
 * {
   box-sizing: border-box;
@@ -360,14 +364,7 @@ footer {
 .hidden {
   display: none;
 }</style>
-</head>
-<body>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>Rogue LLM Chat</title>
-    <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
-</head>
+
 <body>
     <!-- Main Page Container -->
     <div class="main-page">
@@ -394,6 +391,8 @@ footer {
                 <button type="button" id="send-button">Send</button>
             </div>
         </footer>
+
+<!-- Settings Panel -->
 <div class="settings-panel" id="settings-panel">
   <!-- Message Options Container -->
   <div id="chat-options-container" style="display: none;">
@@ -468,13 +467,11 @@ footer {
   </div>
 </div>
   </div>
+
     <!-- Scripts -->
-    
-    
-    
-    
-</body>
-</html><script>class Options {
+</body><script>
+
+class Options {
   constructor() {
     this.defaultOptions = {
       num_keep: 5,
@@ -490,7 +487,7 @@ footer {
       presence_penalty: 1.1,
       frequency_penalty: 1.0,
       penalize_newline: true,
-      stop: ['\n', '\r'],
+      stop: ['\&#10;', '\&#13;'],
       numa: false,
       num_ctx: 1024,
       num_batch: 32,
@@ -575,7 +572,8 @@ footer {
       }
     }
   }
-}</script><script>// File: call.js
+}
+
 
 /**
  * Constants for DOM elements.
@@ -598,7 +596,7 @@ function resetConnection() {
  *
  * @throws {Error} If not connected or connection fails.
  */
- //https://developers.cloudflare.com/cloudflare-one/identity/service-tokens/
+ 
 async function makeApiRequest(url, method, body = null, headers = null, blockOpen= false) {
   const controller = new AbortController();
   const signal = controller.signal;
@@ -619,7 +617,7 @@ async function makeApiRequest(url, method, body = null, headers = null, blockOpe
 
     const response = await fetch(url, fetchOptions);
 
-    clearTimeout(timerId); // Clear the timeout
+    clearTimeout(timerId); 
 
     if (!response.ok) {
       throw new Error(`API request failed with status code ${response.status}: ${await response.text()}`);
@@ -628,7 +626,7 @@ async function makeApiRequest(url, method, body = null, headers = null, blockOpe
     return response;
   } catch (error) {
     if (timerId) {
-      clearTimeout(timerId); // Clear the timeout in case of an error
+      clearTimeout(timerId); 
     }
     if (error.name === 'AbortError') {
       return { error: 'Timeout exceeded' };
@@ -672,11 +670,11 @@ async function establishConnection() {
          if (!clientId || !clientSecret) {
            throw new Error("No API Key");
          }
-         // Set API headers
+         
          const headers = { "CF-Access-Client-Id": clientId, "CF-Access-Client-Secret": clientSecret, "Content-Type": "application/json", "ai": "1" };
          const url = new URL("", apiUrl);
 
-         // Fetch models from API
+         
          includeCreds = true;
           response = await makeApiRequest(url, "GET", null, headers);
 
@@ -737,7 +735,7 @@ async function establishConnection() {
  * @async
  */
 async function loadActiveModels() {
-    // Get input values
+    
     const apiUrl = apiUrlInput.value.trim();
     const clientId = clientIdInput.value.trim();
     const clientSecret = clientSecretInput.value.trim();
@@ -749,27 +747,27 @@ async function loadActiveModels() {
     {
         await establishConnection();
         if (!connectionReady) {
-          await sleep(2000); // Sleep for 2 seconds
+          await sleep(2000); 
           await establishConnection();
         }
          if (!connectionReady) {
        throw new Error("Error loading models - no connection");
   
       }
-        // Fetch models from API
+        
         const url = new URL("/api/ps", apiUrl);
         const res = await makeApiRequest(url, "GET");
        
 
         if (res.ok) {
-            // Parse response as JSON
+            
             const models = await res.json();
 
             if (Array.isArray(models.models) && models.models.length > 0) {
         
             
                 
-            let selectedOption = models.models[0].name; // Default to the first option
+            let selectedOption = models.models[0].name; 
 
             if(models.models[0].name == "[EMPTY]")
                throw new Error("Error loading models");
@@ -783,7 +781,7 @@ async function loadActiveModels() {
                     modelsSelectDropdown.value = selectedOption;
 
                     savedModelSelected = selectedOption;
-               //     localStorage.setItem('modelSelected', savedModelSelected);
+               
                     modelsactive.textContent = savedModelSelected;
                     
                     return;
@@ -799,7 +797,7 @@ async function loadActiveModels() {
                modelsactive.textContent = "";
     } 
     catch (error) {
-       // Clear model select dropdown options
+       
         if (modelsSelectDropdown && modelsSelectDropdown.options) {
             while (modelsSelectDropdown.options.length > 0) {
                 modelsSelectDropdown.remove(0);
@@ -807,7 +805,7 @@ async function loadActiveModels() {
         }
    throw new Error("Error loading models");
     }  finally {
-        // Hide loading indicator
+        
         loadingIndicator.style.display = 'none';
     }
 }
@@ -818,7 +816,7 @@ async function loadActiveModels() {
  * @async
  */
 async function loadModels() {
-    // Get input values
+    
     const apiUrl = apiUrlInput.value.trim();
     const clientId = clientIdInput.value.trim();
     const clientSecret = clientSecretInput.value.trim();
@@ -826,27 +824,27 @@ async function loadModels() {
     try 
     {
       await establishConnection();
-      // Show loading indicator
+      
         loadingIndicator.style.display = 'flex';
 
-        // Clear model select dropdown options
+        
         if (modelsSelectDropdown && modelsSelectDropdown.options) {
             while (modelsSelectDropdown.options.length > 0) {
                 modelsSelectDropdown.remove(0);
             }
         }
 
-        // Fetch models from API
+        
         const url = new URL("/api/tags", apiUrl);
        const res = await makeApiRequest(url, "GET");
   
         if (res.ok) {
-            // Parse response as JSON
+            
             const models = await res.json();
 
-            // Check if models is an array
+            
             if (Array.isArray(models.models)) {
-                // Add model options to dropdown
+                
                 models.models.forEach(model => {
                     if(!model.name.includes("embed"))
                     {
@@ -857,10 +855,10 @@ async function loadModels() {
                     }
                 });
 
-                // Select an option based on savedModelSelected or the first model if none is selected
-                let selectedOption = modelsSelectDropdown.options[0].value; // Default to the first option
+                
+                let selectedOption = modelsSelectDropdown.options[0].value; 
 
-                // Check if any of the fetched models match the savedModelSelected
+                
                 for (let i = 0; i < modelsSelectDropdown.options.length; i++) {
                     if (modelsSelectDropdown.options[i].value === savedModelSelected) {
                         selectedOption = savedModelSelected;
@@ -868,10 +866,10 @@ async function loadModels() {
                     }
                 }
 
-                // Set the selected option
+                
                 modelsSelectDropdown.value = selectedOption;
 
-                // Update savedModelSelected and local storage
+                
                 savedModelSelected = modelsSelectDropdown.value;
                 localStorage.setItem('modelSelected', savedModelSelected);
             } else {
@@ -880,7 +878,7 @@ async function loadModels() {
         } 
         else  
         {
-   // Clear model select dropdown options
+   
         if (modelsSelectDropdown && modelsSelectDropdown.options) {
             while (modelsSelectDropdown.options.length > 0) {
                 modelsSelectDropdown.remove(0);
@@ -891,7 +889,7 @@ async function loadModels() {
     } catch (error) {
     throw new Error("Error loading models");
     } finally {
-        // Hide loading indicator
+        
         loadingIndicator.style.display = 'none';
     }
 }
@@ -901,10 +899,10 @@ function GetChatHistory() {
   const bubbles = ChatArea.querySelectorAll('pre');
 
   if (bubbles.length === 0) {
-    return ''; // or you can return a custom message, e.g., 'No chat history'
+    return ''; 
   }
 
-  const combinedText = [...bubbles].map(bubble => bubble.textContent).join('\n\n');
+  const combinedText = [...bubbles].map(bubble => bubble.textContent).join('\&#10;\&#10;');
   return combinedText;
 }
 /**
@@ -913,7 +911,7 @@ function GetChatHistory() {
  * @async
  */
 async function sendMessage() {
-  // Get input values
+  
   const apiUrl = apiUrlInput.value.trim();
   const clientId = clientIdInput.value.trim();
   const clientSecret = clientSecretInput.value.trim();
@@ -965,7 +963,7 @@ async function sendMessage() {
     "content": messageInput.value
   });
 
-// Preparing the payload for further processing or sending
+
 const payload = {
   "model": modelSelected,
   "messages": messages.conversation,
@@ -1011,7 +1009,7 @@ async function p(chatMessage,res,isStream)
             if (isStream) {
                 const reader = res.body.getReader();
                 let partialJson = "";
-                const processor = new StreamingJsonProcessor(); // Instantiate the processor
+                const processor = new StreamingJsonProcessor(); 
 
                 while (true) {
                     const { done, value } = await reader.read();
@@ -1020,8 +1018,8 @@ async function p(chatMessage,res,isStream)
                     const chunk = new TextDecoder().decode(value);
                     partialJson += chunk;
 
-                    const contentArray = processor.processChunk(partialJson); // Process the accumulated chunk and get content array
-                    partialJson = ""; // Clear the accumulated chunk
+                    const contentArray = processor.processChunk(partialJson); 
+                    partialJson = ""; 
 
                     
                     
@@ -1031,7 +1029,7 @@ async function p(chatMessage,res,isStream)
                         resizePre(bubble);
                     
                         if (ChatAreaContainer.scrollTop === ChatAreaContainer.scrollHeight - ChatAreaContainer.clientHeight) {
-                        // don't scroll
+                        
                         } else if (ChatAreaContainer.scrollHeight > ChatAreaContainer.clientHeight) {
                           ChatAreaContainer.scrollTo({
                           top: ChatAreaContainer.scrollHeight - ChatAreaContainer.clientHeight,
@@ -1043,7 +1041,7 @@ async function p(chatMessage,res,isStream)
                 }
             } else {
                 const resText = await res.text();
-                bubble.textContent += `\n${resText}`;
+                bubble.textContent += `\&#10;${resText}`;
             }
          messageInput.focus();
  } catch (error) {
@@ -1104,7 +1102,7 @@ class StreamingJsonProcessor {
             const endIndex = this.findNextJsonEndIndex(this.buffer, 0);
 
             if (endIndex === -1) {
-                break; // No complete JSON object found
+                break; 
             }
 
             const jsonString = this.sanitizeJson(this.buffer.substring(0, endIndex + 1));
@@ -1119,7 +1117,7 @@ class StreamingJsonProcessor {
                 console.error("Error parsing JSON:", error);
             }
 
-            // Remove the parsed JSON object from the buffer
+            
             this.buffer = this.buffer.substring(endIndex + 1);
         }
         return contentArray;
@@ -1165,10 +1163,10 @@ class StreamingJsonProcessor {
      * @returns {string}
      */
     sanitizeJson(jsonString) {
-        // Remove trailing whitespace, newlines, and commas
+        
         let sanitizedString = jsonString.trim();
 
-        // Remove trailing commas within arrays or objects
+        
         sanitizedString = sanitizedString.replace(/,\s*([\]}])/g, '$1');
 
         return sanitizedString;
@@ -1181,8 +1179,8 @@ class StreamingJsonProcessor {
  * @param {string} jsonString
  * @returns {string|null}
  */
-// "{"model":"nemotron-mini:4b-instruct-fp16","created_at":"2025-08-30T04:44:37.603162318Z","message":{"role":"assistant","content":"\n"},"done":false}"
-//"{"model":"nemotron-mini:4b-instruct-fp16","created_at":"2025-08-30T04:46:51.293019809Z","message":{"role":"assistant","content":""},"done_reason":"stop","done":true,"total_duration":85964227,"load_duration":48818790,"prompt_eval_count":140,"prompt_eval_duration":4339731,"eval_count":1,"eval_duration":32317117}"
+
+
 function extractContent(jsonString) {
 
   if (!jsonString.endsWith(',"done":false}')) {
@@ -1190,11 +1188,11 @@ function extractContent(jsonString) {
   }
   
   let startMarker = '"content":';
-  let endMarker = ',"done":'; // Or '}' if "done" isn't always present
+  let endMarker = ',"done":'; 
 
   let startIndex = jsonString.indexOf(startMarker);
   if (startIndex === -1) {
-    return null; // Content not found
+    return null; 
   }
 
   startIndex += startMarker.length+1;
@@ -1204,7 +1202,7 @@ function extractContent(jsonString) {
       endIndex = jsonString.lastIndexOf('}');
       if (endIndex === -1) return null;
   } else if (endIndex === -1) {
-    return null; // End marker not found
+    return null; 
   }
   
   let content = jsonString.substring(startIndex, endIndex-2);
@@ -1219,19 +1217,19 @@ function extractContent(jsonString) {
  * @returns {string} The text with character encodings replaced, or an error message if text is not a string.
  */
 function replaceCharEncodings(text) {
-  // Check if text is a string
+  
   if (typeof text !== 'string') {
     return 'Error: Input must be a string.';
   }
 
-  // Define a map of character encodings to their corresponding characters
+  
   const charMap = {
     "\\u003e": ">",
-    "\\n": "\n",
+    "\\&#10;": "\&#10;",
     "\\u003c": "<",
-    "\\u0026": "&", // For &
-    "\\u0027": "'", // For '
-    // Add more mappings here as needed
+    "\\u0026": "&", 
+    "\\u0027": "'", 
+    
   };
 
   /**
@@ -1241,30 +1239,31 @@ function replaceCharEncodings(text) {
    * @returns {string} The replaced character or the original match if not found in charMap.
    */
   function replaceMatch(match) {
-    // Check if the match is a Unicode escape sequence
+    
     if (match.startsWith("\\u")) {
       try {
-        // Attempt to parse and replace the Unicode escape sequence directly
+        
         return String.fromCharCode(parseInt(match.substring(2), 16));
       } catch (e) {
         console.error(`Error parsing Unicode escape sequence: ${e}`);
       }
     }
 
-    // If not a Unicode escape sequence or parsing failed, check charMap
+    
     return charMap[match] || match;
   }
 
-  // Use a regular expression to replace character encodings in the text
-  const regex = /\\u[0-9a-fA-F]{4}|\\n|\\r/g;
+  
+  const regex = /\\u[0-9a-fA-F]{4}|\\&#10;|\\&#13;/g;
   return text.replace(regex, replaceMatch);
-}</script><script>/* File: gui.js */
+}
 
-// Get the input section and chat body container elements
+
+
 
 const chatBody = document.getElementById('chat-body');
 
-// Variables to store the current height of the input section and chat body container
+
 let chatBodyHeight;
 
 let screenHeight;
@@ -1280,32 +1279,32 @@ const windowWidthDisplay = document.getElementById('window-width-display');
 
 const textarea = document.getElementById('user-input');
 
-// Function to update the size of all bubbles
+
 function guiSizeChange() {
-  // Reset the size of the main chat content container
+  
   const mainChatContent = document.querySelector('.chat-body-container');
   mainChatContent.style.height = '88dvh';
 
-  // Get all the bubbles
+  
   const bubbles = document.querySelectorAll('.chat-body pre');
 
-  // Update the height and width of each bubble
+  
   bubbles.forEach(abubble => {
 resizePre(abubble) 
   });
 }
 
-// Function to save the layout in local storage
+
 function saveLayout() {
   localStorage.setItem('chatBodyHeight', chatBodyHeight);
 }
 
-// Function to load the saved layout from local storage
+
 function loadLayout() {
   chatBodyHeight = localStorage.getItem('chatBodyHeight');
 }
 
-  // Load the saved layout
+  
   loadLayout();
 
 
@@ -1324,13 +1323,13 @@ function createBubble(role, text) {
   const bubble = document.createElement('pre');
   if (role === 'user') {
    bubble.className = 'user-bubble';
-    bubble.textContent = "User: " + text.replace(/\n/g, "\r\n");
+    bubble.textContent = "User: " + text.replace(/\&#10;/g, "\&#13;\&#10;");
   } else if (role === 'ai') {
    bubble.className = 'ai-bubble';
-    bubble.textContent = "AI: " + text.replace(/\n/g, "\r\n");
+    bubble.textContent = "AI: " + text.replace(/\&#10;/g, "\&#13;\&#10;");
   }
 
-  // Make the bubble expand to fit the text
+  
   bubble.rows = 1;
   bubble.style.height = 'auto';
   bubble.style.overflowY = 'hidden';
@@ -1339,7 +1338,7 @@ function createBubble(role, text) {
 
   bubble.disabled = true;
 
-  // Calculate the height of the bubble based on its content
+  
   const scrollHeight = bubble.scrollHeight;
   bubble.style.height = `${scrollHeight}px`;
   
@@ -1348,15 +1347,16 @@ function createBubble(role, text) {
 
 
 
-// Function to display the LLM output in a temporary text area
+
 function displayTempOutput(tempTextArea) {
-  // Create a temporary text area element if it doesn't exist
+  
   tempTextArea.id = 'ai-bubble';
   tempTextArea.classList.add('ai-bubble');
 
-  // Display the LLM output in the temporary text area
-  tempTextArea.style.display = 'block'; // Show the text area
-}</script><script>/* File: script.js */
+  
+  tempTextArea.style.display = 'block'; 
+}
+
 
 const cloudSettingsButton = document.querySelector('#cloud-settings-button');
 const cloudSettingsButtonClose = document.querySelector('#cloud-settings-button-close');
@@ -1394,7 +1394,7 @@ const clientStreamInput = document.querySelector('#client-stream');
 const darkModeButton = document.querySelector('#dark-mode-button');
 const body = document.body;
 
-// Load saved settings from local storage
+
 const savedApiUrl = localStorage.getItem('apiUrl');
 const savedClientId = localStorage.getItem('clientId');
 const savedClientSecret = localStorage.getItem('clientSecret');
@@ -1405,37 +1405,37 @@ let savedModelSelected = localStorage.getItem('modelSelected');
 
 
 
-// Get the current options
+
 const options = new Options();
 const currentOptions = options.getOptions();
 
 
-// Get the settings area and input section elements
+
 const settingsAside = document.querySelector('.settings-panel');
 let isSending = false;
 
-// Change this to send on enter
+
 let SendOnEnter = true;
 
 
 let systemPrompt = savedSystempPrompt;
 document.addEventListener('DOMContentLoaded', () => {
   
-  // late boot
+  
   setTimeout(() => {
     requestAnimationFrame(guiSizeChange);
-  }, 100); // Call guiSizeChange after 100ms, but wait for the next animation frame
+  }, 100); 
   
-  // Load the saved options
+  
   options.loadOptions();
-  // set input focus
+  
     messageInput.focus();
-  resize_textbox(); // late boot
+  resize_textbox(); 
    
-  // Clear the models-active text content
+  
   document.querySelector('#models-active').textContent = "";
 
-  // Populate input fields with saved settings
+  
   if (savedApiUrl) {
     apiUrlInput.value = savedApiUrl;
   }
@@ -1461,12 +1461,12 @@ document.addEventListener('DOMContentLoaded', () => {
     systemPrompt = savedSystempPrompt;
   }
   
-  // Apply dark mode if saved
+  
   if (savedDarkMode === 'true') {
     body.classList.add('dark-mode');
   }
 
-  // Event listeners
+  
   cloudSettingsButton.addEventListener('click', () => {
    if (cloudSettingsContainer.style.display === 'none') {
       cloudSettingsContainer.style.display = 'flex';
@@ -1481,7 +1481,7 @@ document.addEventListener('DOMContentLoaded', () => {
       cloudSettingsContainer.style.display === 'none' ? 'flex' : 'none';
     toggleSettingsAside();
   });
-// Add event listeners
+
 chatOptionsButton.addEventListener('click', () => {
    if (chatOptionsContainer.style.display === 'none') {
       chatOptionsContainer.style.display = 'flex';
@@ -1538,26 +1538,26 @@ chatOptionsSaveButton.addEventListener('click', () => {
     toggleSettingsAside();
   });
   
-  // Call adjustChatContainerHeight whenever the window is resized
+  
 window.addEventListener('resize', () => {
   guiSizeChange();
 });
 
-// Create a separate event listener for screen orientation changes
+
 window.addEventListener('orientationchange', () => {
   guiSizeChange();
 });
   window.addEventListener('wheel', (event) => {
   if (event.shiftKey || event.ctrlKey) {
-    // Handle zooming here
-  resize_textbox(); // late boot
- //   guiSizeChange();
+    
+  resize_textbox(); 
+ 
   }
 });
-  // Add event listener to dropdown
+  
 modelsSelectDropdown.addEventListener('change', (e) => {
   const selectedValue = e.target.value;
- //   loadActiveModels();
+ 
     savedModelSelected = selectedValue;
 
     localStorage.setItem('modelSelected', selectedValue);
@@ -1572,30 +1572,30 @@ modelsSelectDropdown.addEventListener('change', (e) => {
   if ( messageInput.value  === '') {
               messageInput.classList.add('normal');
          messageInput.classList.remove('expanded');
-     //  messageInput.style.height = '6dvh';
+     
 
         }
   });
   messageInput.addEventListener('paste', function(event) {
      
   setTimeout(() => {
-     resize_textbox(); // late boot
+     resize_textbox(); 
      
      
-  }, 100); // Call guiSizeChange after 100ms, but wait for the next animation frame
+  }, 100); 
   
   });
-  // Add event listener for keydown on the text input element
+  
   messageInput.addEventListener('keypress', (event) => {
     if (event.key === 'Enter') {
       if (event.shiftKey || !SendOnEnter) {
-        // If Shift + Enter, add a new line to the text input and prevent default behavior
+        
         event.preventDefault();
         
                 const cursorPosition = messageInput.selectionStart;
         const textBeforeCursor = messageInput.value.substring(0, cursorPosition);
         const textAfterCursor = messageInput.value.substring(cursorPosition, messageInput.value.length);
-        messageInput.value = textBeforeCursor + '\n' + textAfterCursor;
+        messageInput.value = textBeforeCursor + '\&#10;' + textAfterCursor;
         messageInput.selectionStart = cursorPosition + 1;
         messageInput.selectionEnd = cursorPosition + 1;
         
@@ -1603,7 +1603,7 @@ modelsSelectDropdown.addEventListener('change', (e) => {
       } else {
         if(SendOnEnter)
         {
-          // If only Enter, send the message and prevent default behavior
+          
           event.preventDefault();
           runSend();
         }
@@ -1638,7 +1638,7 @@ async function doSendMessage() {
   try{
        isSending = true;
 
-       // Change the button text and add a cancel event listener
+       
        sendButton.textContent = 'Cancel';
 
        showLoading()
@@ -1663,19 +1663,19 @@ async function doSendMessage() {
 
 function DoneSend() {
   isSending = false;
-  // Change the button text and add a send event listener
+  
   sendButton.textContent = 'Send';
-//  loadingIndicator.style.display = "none";
+
   hideLoading();
 }
 
 function showLoading() {
-  // Show the loading indicator
+  
   loadingIndicator.style.display = 'flex';
 }
 
 function hideLoading() {
-  // Hide the loading indicator after a delay (e.g. when the message is sent)
+  
   loadingIndicator.style.display = 'none';
 
 }
@@ -1686,7 +1686,7 @@ function saveSettings() {
   localStorage.setItem('clientId', clientIdInput.value);
   localStorage.setItem('clientSecret', clientSecretInput.value);
   localStorage.setItem('clientStream', !clientStreamInput.checked);
-  // Save the options
+  
   options.saveOptions(currentOptions);
 
   systemPrompt = syspromptInput.value;
@@ -1697,11 +1697,11 @@ systemPrompt= syspromptInput.value;
  localStorage.setItem('system-prompt', systemPrompt); 
 }
 
-///GUI////
 
 
 
-// Function to show/hide the settings aside
+
+
 function toggleSettingsAside() {
   if (cloudSettingsContainer.style.display === 'flex' ||
     llmSettingsContainer.style.display === 'flex' ||
@@ -1736,6 +1736,6 @@ function toggleSettingsAside() {
       } else {
    appSettingsButton.classList.remove('active');
       }
-}</script></body>
+}
+</script>
 </html>
-
