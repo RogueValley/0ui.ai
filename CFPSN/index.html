@@ -639,7 +639,7 @@ async function makeApiRequest(url, method, body = null, headers = null, blockOpe
 async function establishConnection() {
   if (!connectionReady) {
     connectionReady = false;
-    const apiUrl = "https://cfp01.0ui.ai/";
+    const apiUrl = apiUrlInput.value.trim();
     const clientId = clientIdInput.value.trim();
     const clientSecret = clientSecretInput.value.trim();
     
@@ -715,7 +715,7 @@ async function establishConnection() {
  */
 async function loadActiveModels() {
     
-    const apiUrl = "https://cfp01.0ui.ai/";
+    const apiUrl = apiUrlInput.value.trim();
     const clientId = clientIdInput.value.trim();
     const clientSecret = clientSecretInput.value.trim();
     const modelsactive = document.getElementById('models-active');
@@ -796,7 +796,7 @@ async function loadActiveModels() {
  */
 async function loadModels() {
     
-    const apiUrl = "https://cfp01.0ui.ai/";
+    const apiUrl = apiUrlInput.value.trim();
     const clientId = clientIdInput.value.trim();
     const clientSecret = clientSecretInput.value.trim();
 
@@ -891,7 +891,7 @@ function GetChatHistory() {
  */
 async function sendMessage() {
   
-  const apiUrl = "https://cfp01.0ui.ai/";
+  const apiUrl = apiUrlInput.value.trim();
   const clientId = clientIdInput.value.trim();
   const clientSecret = clientSecretInput.value.trim();
   const chatMessage = messageInput.value;
