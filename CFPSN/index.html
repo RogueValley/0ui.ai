@@ -447,7 +447,7 @@ footer {
   <div id="cloud-settings-container" style="display: none;">
     <h2>Cloud Settings</h2>
     <form id="cloud-settings-form">
-      <label for="api-url">API URL:</label><input type="text" id="api-url" name="api-url" value="https://cfp01.0ui.ai/"><br><br>
+      <label for="api-url">API URL:</label><input type="text" id="api-url" name="api-url"><br><br>
       <label for="client-id">Client ID:</label><input type="text" id="client-id" name="client-id"><br><br>
       <label for="client-secret">Client Secret:</label><input type="text" id="client-secret" name="client-secret"><br><br>
       <label for="client-stream">Client Stream:</label><input type="checkbox" id="client-stream" value="true" checked><br><br>
@@ -639,8 +639,10 @@ async function makeApiRequest(url, method, body = null, headers = null, blockOpe
 async function establishConnection() {
   if (!connectionReady) {
     connectionReady = false;
-    const apiUrl = apiUrlInput.value.trim();
-   
+    const apiUrl = "https://cfp01.0ui.ai/";
+    const clientId = clientIdInput.value.trim();
+    const clientSecret = clientSecretInput.value.trim();
+    
     
     try {
        let response;
@@ -713,7 +715,7 @@ async function establishConnection() {
  */
 async function loadActiveModels() {
     
-    const apiUrl = apiUrlInput.value.trim();
+    const apiUrl = "https://cfp01.0ui.ai/";
     const clientId = clientIdInput.value.trim();
     const clientSecret = clientSecretInput.value.trim();
     const modelsactive = document.getElementById('models-active');
@@ -794,7 +796,7 @@ async function loadActiveModels() {
  */
 async function loadModels() {
     
-    const apiUrl = apiUrlInput.value.trim();
+    const apiUrl = "https://cfp01.0ui.ai/";
     const clientId = clientIdInput.value.trim();
     const clientSecret = clientSecretInput.value.trim();
 
@@ -889,9 +891,7 @@ function GetChatHistory() {
  */
 async function sendMessage() {
   
-  const apiUrl = apiUrlInput.value.trim();
-  const clientId = clientIdInput.value.trim();
-  const clientSecret = clientSecretInput.value.trim();
+  const apiUrl = "https://cfp01.0ui.ai/";
   const chatMessage = messageInput.value;
   const clientStream = clientStreamInput.value != "false";
   const modelSelected = savedModelSelected;
@@ -1412,7 +1412,6 @@ document.addEventListener('DOMContentLoaded', () => {
   
   document.querySelector('#models-active').textContent = "";
 
-  
 
   clientStreamInput.checked = savedClientStream != "true";
 
@@ -1644,44 +1643,19 @@ function hideLoading() {
 }
 
 
+function saveSettings() {
+
+}
+function saveSystemPrompt() {
+}
+
+
 
 
 
 
 function toggleSettingsAside() {
-  if (cloudSettingsContainer.style.display === 'flex' ||
-    llmSettingsContainer.style.display === 'flex' ||
-    appSettingsContainer.style.display === 'flex' ||
-    chatOptionsContainer.style.display === 'flex') {
-    settingsAside.style.display = 'flex';
-  } else {
-    settingsAside.style.display = 'none';
-   } 
-  
-    if (cloudSettingsContainer.style.display === 'flex') {
-   cloudSettingsButton.classList.add('active'); 
-      } else {
-   cloudSettingsButton.classList.remove('active');
-      }   
-      
-       if (chatOptionsContainer.style.display === 'flex') {
-   chatOptionsButton.classList.add('active');
-   options.loadOptions();
-  }else {
-     chatOptionsButton.classList.remove('active');
-  }
-  
-     if (llmSettingsContainer.style.display === 'flex') {
-     llmSettingsButton.classList.add('active'); 
-    } else {
-     llmSettingsButton.classList.remove('active');
-     }
-     
-        if (appSettingsContainer.style.display === 'flex') {
-   appSettingsButton.classList.add('active'); 
-      } else {
-   appSettingsButton.classList.remove('active');
-      }
+ 
 }
 </script>
 </html>
