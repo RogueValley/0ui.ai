@@ -892,6 +892,8 @@ function GetChatHistory() {
 async function sendMessage() {
   
   const apiUrl = "https://cfp01.0ui.ai/";
+  const clientId = clientIdInput.value.trim();
+  const clientSecret = clientSecretInput.value.trim();
   const chatMessage = messageInput.value;
   const clientStream = clientStreamInput.value != "false";
   const modelSelected = savedModelSelected;
@@ -1412,6 +1414,16 @@ document.addEventListener('DOMContentLoaded', () => {
   
   document.querySelector('#models-active').textContent = "";
 
+  
+  if (savedApiUrl) {
+    apiUrlInput.value = savedApiUrl;
+  }
+  if (savedClientId) {
+    clientIdInput.value = savedClientId;
+  }
+  if (savedClientSecret) {
+    clientSecretInput.value = savedClientSecret;
+  }
 
   clientStreamInput.checked = savedClientStream != "true";
 
@@ -1423,6 +1435,11 @@ document.addEventListener('DOMContentLoaded', () => {
     modelsSelectDropdown.value = savedModelSelected;
   }
 
+  if (savedSystempPrompt)
+  {
+    systemPrompt = savedSystempPrompt;
+  }
+  
   
   if (savedDarkMode === 'true') {
     body.classList.add('dark-mode');
@@ -1644,9 +1661,19 @@ function hideLoading() {
 
 
 function saveSettings() {
+  localStorage.setItem('apiUrl', apiUrlInput.value);
+  localStorage.setItem('clientId', clientIdInput.value);
+  localStorage.setItem('clientSecret', clientSecretInput.value);
+  localStorage.setItem('clientStream', !clientStreamInput.checked);
+  
+  options.saveOptions(currentOptions);
 
+  systemPrompt = syspromptInput.value;
+  resetConnection();
 }
 function saveSystemPrompt() {
+systemPrompt= syspromptInput.value;
+ localStorage.setItem('system-prompt', systemPrompt); 
 }
 
 
@@ -1655,7 +1682,39 @@ function saveSystemPrompt() {
 
 
 function toggleSettingsAside() {
- 
+  if (cloudSettingsContainer.style.display === 'flex' ||
+    llmSettingsContainer.style.display === 'flex' ||
+    appSettingsContainer.style.display === 'flex' ||
+    chatOptionsContainer.style.display === 'flex') {
+    settingsAside.style.display = 'flex';
+  } else {
+    settingsAside.style.display = 'none';
+   } 
+  
+    if (cloudSettingsContainer.style.display === 'flex') {
+   cloudSettingsButton.classList.add('active'); 
+      } else {
+   cloudSettingsButton.classList.remove('active');
+      }   
+      
+       if (chatOptionsContainer.style.display === 'flex') {
+   chatOptionsButton.classList.add('active');
+   options.loadOptions();
+  }else {
+     chatOptionsButton.classList.remove('active');
+  }
+  
+     if (llmSettingsContainer.style.display === 'flex') {
+     llmSettingsButton.classList.add('active'); 
+    } else {
+     llmSettingsButton.classList.remove('active');
+     }
+     
+        if (appSettingsContainer.style.display === 'flex') {
+   appSettingsButton.classList.add('active'); 
+      } else {
+   appSettingsButton.classList.remove('active');
+      }
 }
 </script>
 </html>
