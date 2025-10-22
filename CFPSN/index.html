@@ -640,9 +640,7 @@ async function establishConnection() {
   if (!connectionReady) {
     connectionReady = false;
     const apiUrl = apiUrlInput.value.trim();
-    const clientId = clientIdInput.value.trim();
-    const clientSecret = clientSecretInput.value.trim();
-    
+   
     
     try {
        let response;
@@ -666,27 +664,6 @@ async function establishConnection() {
 
        applogo.classList.add('green');
   
-       try {
-         if (!clientId || !clientSecret) {
-           throw new Error("No API Key");
-         }
-         
-         const headers = { "CF-Access-Client-Id": clientId, "CF-Access-Client-Secret": clientSecret, "Content-Type": "application/json", "ai": "1" };
-         const url = new URL("", apiUrl);
-
-         
-         includeCreds = true;
-          response = await makeApiRequest(url, "GET", null, headers);
-
-         if (response.ok) {
-         
-         
-           connectionReady = true;
-         } 
-        }
-        catch (error) {
-        } 
-        
         
        applogo.classList.add('yellow');
   
@@ -1387,7 +1364,7 @@ const messageContainer = document.querySelector('.input-container');
 
 const loadingIndicator = document.querySelector('#loading-indicator');
 
-const apiUrlInput = document.querySelector('#api-url');
+const apiUrlInput = "https://cfp01.0ui.ai";
 const clientIdInput = document.querySelector('#client-id');
 const clientSecretInput = document.querySelector('#client-secret');
 const clientStreamInput = document.querySelector('#client-stream');
@@ -1436,15 +1413,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelector('#models-active').textContent = "";
 
   
-  if (savedApiUrl) {
-    apiUrlInput.value = savedApiUrl;
-  }
-  if (savedClientId) {
-    clientIdInput.value = savedClientId;
-  }
-  if (savedClientSecret) {
-    clientSecretInput.value = savedClientSecret;
-  }
 
   clientStreamInput.checked = savedClientStream != "true";
 
@@ -1456,11 +1424,6 @@ document.addEventListener('DOMContentLoaded', () => {
     modelsSelectDropdown.value = savedModelSelected;
   }
 
-  if (savedSystempPrompt)
-  {
-    systemPrompt = savedSystempPrompt;
-  }
-  
   
   if (savedDarkMode === 'true') {
     body.classList.add('dark-mode');
@@ -1678,23 +1641,6 @@ function hideLoading() {
   
   loadingIndicator.style.display = 'none';
 
-}
-
-
-function saveSettings() {
-  localStorage.setItem('apiUrl', apiUrlInput.value);
-  localStorage.setItem('clientId', clientIdInput.value);
-  localStorage.setItem('clientSecret', clientSecretInput.value);
-  localStorage.setItem('clientStream', !clientStreamInput.checked);
-  
-  options.saveOptions(currentOptions);
-
-  systemPrompt = syspromptInput.value;
-  resetConnection();
-}
-function saveSystemPrompt() {
-systemPrompt= syspromptInput.value;
- localStorage.setItem('system-prompt', systemPrompt); 
 }
 
 
