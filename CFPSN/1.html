@@ -850,7 +850,7 @@ async function sendMessage() {
   const modelSelected = savedModelSelected;
 
 
-  if (!modelSelected || !chatMessage|| messageInput.value == "") {
+  if (!chatMessage|| messageInput.value == "") {
       throw new Error("Error !modelSelected || !chatMessage");  
   }
 
