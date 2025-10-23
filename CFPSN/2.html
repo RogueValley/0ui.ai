@@ -589,7 +589,7 @@ async function makeApiRequest(url, method, body = null, headers = null, blockOpe
 async function establishConnection() {
   if (!connectionReady) {
     connectionReady = false;
-    const apiUrl = apiUrlInput.value.trim();
+    const apiUrl = apiUrlInput;
     const clientId = clientIdInput;
     const clientSecret = clientSecretInput;
     
@@ -666,7 +666,7 @@ async function establishConnection() {
  */
 async function loadActiveModels() {
     
-    const apiUrl = apiUrlInput.value.trim();
+    const apiUrl = apiUrlInput;
     const clientId = clientIdInput;
     const clientSecret = clientSecretInput;
     const modelsactive = document.getElementById('models-active');
@@ -747,7 +747,7 @@ async function loadActiveModels() {
  */
 async function loadModels() {
     
-    const apiUrl = apiUrlInput.value.trim();
+    const apiUrl = apiUrlInput;
     const clientId = clientIdInput;
     const clientSecret = clientSecretInput;
 
@@ -842,7 +842,7 @@ function GetChatHistory() {
  */
 async function sendMessage() {
   
-  const apiUrl = apiUrlInput.value.trim();
+  const apiUrl = apiUrlInput;
   const clientId = clientIdInput;
   const clientSecret = clientSecretInput;
   const chatMessage = messageInput.value;
@@ -1317,7 +1317,7 @@ const messageContainer = document.querySelector('.input-container');
 
 const loadingIndicator = document.querySelector('#loading-indicator');
 
-const apiUrlInput = document.querySelector('#api-url');
+const apiUrlInput = 'https://cfp02.learnui.ai/';
 const clientIdInput = '6d5ec9d9c25157460af4ef4e53407731.access';
 const clientSecretInput = '5d70ced09cf0b75ed9dc56280509cdce946342745e49f1a5d39a27274cdac260';
 const clientStreamInput = document.querySelector('#client-stream');
