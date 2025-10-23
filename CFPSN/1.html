@@ -591,8 +591,8 @@ async function establishConnection() {
   if (!connectionReady) {
     connectionReady = false;
     const apiUrl = apiUrlInput.value.trim();
-    const clientId = clientIdInput.value.trim();
-    const clientSecret = clientSecretInput.value.trim();
+    const clientId = clientIdInput;
+    const clientSecret = clientSecretInput;
     
     
     try {
@@ -667,8 +667,8 @@ async function establishConnection() {
 async function loadActiveModels() {
     
     const apiUrl = apiUrlInput.value.trim();
-    const clientId = clientIdInput.value.trim();
-    const clientSecret = clientSecretInput.value.trim();
+    const clientId = clientIdInput;
+    const clientSecret = clientSecretInput;
     const modelsactive = document.getElementById('models-active');
 
 
@@ -748,8 +748,8 @@ async function loadActiveModels() {
 async function loadModels() {
     
     const apiUrl = apiUrlInput.value.trim();
-    const clientId = clientIdInput.value.trim();
-    const clientSecret = clientSecretInput.value.trim();
+    const clientId = clientIdInput;
+    const clientSecret = clientSecretInput;
 
     try 
     {
@@ -843,8 +843,8 @@ function GetChatHistory() {
 async function sendMessage() {
   
   const apiUrl = apiUrlInput.value.trim();
-  const clientId = clientIdInput.value.trim();
-  const clientSecret = clientSecretInput.value.trim();
+  const clientId = clientIdInput;
+  const clientSecret = clientSecretInput;
   const chatMessage = messageInput.value;
   const clientStream = clientStreamInput.value != "false";
   const modelSelected = savedModelSelected;
@@ -1366,17 +1366,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelector('#models-active').textContent = "";
 
   
-  if (savedApiUrl) {
-    apiUrlInput.value = savedApiUrl;
-  }
-  if (savedClientId) {
-    clientIdInput.value = savedClientId;
-  }
-  if (savedClientSecret) {
-    clientSecretInput.value = savedClientSecret;
-  }
-
-  clientStreamInput.checked = savedClientStream != "true";
 
   
   if (savedDarkMode === 'true') {
@@ -1410,11 +1399,10 @@ modelsSelectDropdown.addEventListener('change', (e) => {
     localStorage.setItem('modelSelected', selectedValue);
   });
   
-  appSaveSysPromptButton.addEventListener('click', saveSystemPrompt);
 
   sendButton.addEventListener('click', runSend);
 
-  saveSettingsButton.addEventListener('click', saveSettings);
+
   messageInput.addEventListener('input', (event) => {
   if ( messageInput.value  === '') {
               messageInput.classList.add('normal');
@@ -1528,17 +1516,6 @@ function hideLoading() {
 }
 
 
-function saveSettings() {
-  localStorage.setItem('apiUrl', apiUrlInput.value);
-  localStorage.setItem('clientId', clientIdInput.value);
-  localStorage.setItem('clientSecret', clientSecretInput.value);
-  localStorage.setItem('clientStream', !clientStreamInput.checked);
-  
-  options.saveOptions(currentOptions);
-
-  systemPrompt = syspromptInput.value;
-  resetConnection();
-}
 function saveSystemPrompt() {
 systemPrompt= syspromptInput.value;
  localStorage.setItem('system-prompt', systemPrompt); 
