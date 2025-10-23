@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>CFP - SN - Rogue LLM Chat</title>
-    <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
 </head>
 
 <style>
@@ -600,7 +599,8 @@ async function establishConnection() {
        
        loadingIndicator.style.display = 'flex';
        applogo.classList.add('black');
-
+     applogo.classList.add('green');
+  
        try {
         includeCreds = true;
        const url = new URL("/api/ps", apiUrl);
