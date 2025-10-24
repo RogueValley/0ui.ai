@@ -589,9 +589,9 @@ async function makeApiRequest(url, method, body = null, headers = null, blockOpe
 async function establishConnection() {
   if (!connectionReady) {
     connectionReady = false;
-    const apiUrl = apiUrlInput.value.trim();
-    const clientId = clientIdInput.value.trim();
-    const clientSecret = clientSecretInput.value.trim();
+    const apiUrl = apiUrlInput;
+    const clientId = clientIdInput;
+    const clientSecret = clientSecretInput;
     
     
     try {
