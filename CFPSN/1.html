@@ -679,86 +679,6 @@ async function establishConnection() {
 
 
 
-/**
- * Load active models from the API.
- *
- * @async
- */
-async function loadActiveModels() {
-    
-    const apiUrl = apiUrlInput;
-    const clientId = clientIdInput;
-    const clientSecret = clientSecretInput;
-    const modelsactive = document.getElementById('models-active');
-
-
-
-    try 
-    {
-        await establishConnection();
-        if (!connectionReady) {
-          await sleep(2000); 
-          await establishConnection();
-        }
-         if (!connectionReady) {
-       throw new Error("Error loading models - no connection");
-  
-      }
-        
-        const url = new URL("/api/ps", apiUrl);
-        const res = await makeApiRequest(url, "GET");
-       
-
-        if (res.ok) {
-            
-            const models = await res.json();
-
-            if (Array.isArray(models.models) && models.models.length > 0) {
-        
-            
-                
-            let selectedOption = models.models[0].name; 
-
-            if(models.models[0].name == "[EMPTY]")
-               throw new Error("Error loading models");
-                    for (let i = 0; i < models.models.length; i++) {
-                        if (models.models[i].name === savedModelSelected) {
-                            selectedOption = savedModelSelected;
-                            break;
-                        }
-                    }
-
-                    modelsSelectDropdown.value = selectedOption;
-
-                    savedModelSelected = selectedOption;
-               
-                    modelsactive.textContent = savedModelSelected;
-                    
-                    return;
-            }
-          
-        
-      
-        } else {
-   throw new Error("Error loading models");
-        }
-        
-        
-               modelsactive.textContent = "";
-    } 
-    catch (error) {
-       
-        if (modelsSelectDropdown && modelsSelectDropdown.options) {
-            while (modelsSelectDropdown.options.length > 0) {
-                modelsSelectDropdown.remove(0);
-            }
-        }
-   throw new Error("Error loading models");
-    }  finally {
-        
-        loadingIndicator.style.display = 'none';
-    }
-}
 
 /**
  * Load models from the API.
@@ -1467,7 +1387,6 @@ modelsSelectDropdown.addEventListener('change', (e) => {
       
   });
 
-  loadActiveModels();
 });
 
 function resize_textbox() {
