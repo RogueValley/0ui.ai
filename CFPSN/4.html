@@ -924,7 +924,7 @@ const payload = {
     const res = await makeApiRequest(url, "POST", result,null, true);
 
     if (res.ok) {
-      p(chatMessage, res, payload.stream);
+      p(chatMessage, res);
     } else {
       throw new Error("Error loading models");
     }
