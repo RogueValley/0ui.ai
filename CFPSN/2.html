@@ -585,13 +585,12 @@ async function makeApiRequest(url, method, body = null, headers = null, blockOpe
   }
 }
 
-
 async function establishConnection() {
   if (!connectionReady) {
     connectionReady = false;
-    const apiUrl = apiUrlInput;
-    const clientId = clientIdInput;
-    const clientSecret = clientSecretInput;
+    const apiUrl = apiUrlInput.value.trim();
+    const clientId = clientIdInput.value.trim();
+    const clientSecret = clientSecretInput.value.trim();
     
     
     try {
@@ -599,8 +598,7 @@ async function establishConnection() {
        
        loadingIndicator.style.display = 'flex';
        applogo.classList.add('black');
-     applogo.classList.add('green');
-  
+
        try {
         includeCreds = true;
        const url = new URL("/api/ps", apiUrl);
@@ -617,6 +615,27 @@ async function establishConnection() {
 
        applogo.classList.add('green');
   
+       try {
+         if (!clientId || !clientSecret) {
+           throw new Error("No API Key");
+         }
+         
+         const headers = { "CF-Access-Client-Id": clientId, "CF-Access-Client-Secret": clientSecret, "Content-Type": "application/json", "ai": "1" };
+         const url = new URL("", apiUrl);
+
+         
+         includeCreds = true;
+          response = await makeApiRequest(url, "GET", null, headers);
+
+         if (response.ok) {
+         
+         
+           connectionReady = true;
+         } 
+        }
+        catch (error) {
+        } 
+        
         
        applogo.classList.add('yellow');
   
@@ -656,8 +675,6 @@ async function establishConnection() {
     throw new Error("Not connected to API");
   }
 }
-
-
 
 /**
  * Load active models from the API.
