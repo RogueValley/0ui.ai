@@ -918,7 +918,7 @@ const payload = {
       result = {};
     }
 
-    await establishConnection();
+  //  await establishConnection();
 
     const url = new URL("/api/chat", apiUrl);
     const res = await makeApiRequest(url, "POST", result,null, true);
