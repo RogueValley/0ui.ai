@@ -934,7 +934,7 @@ const payload = {
  
 }
 
-async function p(chatMessage,res,isStream)
+async function p(chatMessage,res)
 {
    
   try { 
@@ -946,8 +946,7 @@ async function p(chatMessage,res,isStream)
                         });
             const bubble = createBubble("ai", "");
 
-            if (isStream) {
-                const reader = res.body.getReader();
+ const reader = res.body.getReader();
                 let partialJson = "";
                 const processor = new StreamingJsonProcessor(); 
 
@@ -979,10 +978,7 @@ async function p(chatMessage,res,isStream)
                         
                     });
                 }
-            } else {
-                const resText = await res.text();
-                bubble.textContent += `\&#10;${resText}`;
-            }
+  
          messageInput.focus();
  } catch (error) {
     throw new Error("Error loading models");
