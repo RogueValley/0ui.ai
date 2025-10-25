@@ -421,6 +421,109 @@ footer {
     <!-- Scripts -->
 </body><script>
 
+class Options {
+  constructor() {
+    this.defaultOptions = {
+      num_keep: 5,
+      seed: 42,
+      num_predict: 10,
+      top_k: 40,
+      top_p: 0.9,
+      min_p: 0.1,
+      typical_p: 0.2,
+      repeat_last_n: 3,
+      temperature: 0.7,
+      repeat_penalty: 1.2,
+      presence_penalty: 1.1,
+      frequency_penalty: 1.0,
+      penalize_newline: true,
+      stop: ['\&#10;', '\&#13;'],
+      numa: false,
+      num_ctx: 1024,
+      num_batch: 32,
+      num_gpu: 1,
+      main_gpu: 0,
+      use_mmap: true,
+      num_thread: 8
+    };
+  }
+
+  getOptions() {
+    const options = {};
+    for (const key in this.defaultOptions) {
+      if (document.getElementById(key)) {
+        switch (typeof this.defaultOptions[key]) {
+          case 'number':
+            options[key] = parseInt(document.getElementById(key).value);
+            break;
+          case 'boolean':
+            options[key] = document.getElementById(key).checked;
+            break;
+          default:
+            if (key === 'stop') {
+              options[key] = document.getElementById(key).value.split(',');
+            } else {
+              options[key] = document.getElementById(key).value;
+            }
+        }
+      }
+    }
+    return options;
+  }
+
+  saveOptions(options) {
+    localStorage.setItem('options', JSON.stringify(options));
+  }
+
+  loadOptions() {
+    const storedOptions = localStorage.getItem('options');
+    if (storedOptions) {
+      const options = JSON.parse(storedOptions);
+      for (const key in options) {
+        if (document.getElementById(key)) {
+          switch (typeof options[key]) {
+            case 'number':
+              document.getElementById(key).value = options[key];
+              break;
+            case 'boolean':
+              document.getElementById(key).checked = options[key];
+              break;
+            default:
+              if (key === 'stop') {
+                document.getElementById(key).value = options[key].join(',');
+              } else {
+                document.getElementById(key).value = options[key];
+              }
+          }
+        }
+      }
+    } else {
+      this.setDefaults();
+    }
+  }
+
+  setDefaults() {
+    for (const key in this.defaultOptions) {
+      if (document.getElementById(key)) {
+        switch (typeof this.defaultOptions[key]) {
+          case 'number':
+            document.getElementById(key).value = this.defaultOptions[key];
+            break;
+          case 'boolean':
+            document.getElementById(key).checked = this.defaultOptions[key];
+            break;
+          default:
+            if (key === 'stop') {
+              document.getElementById(key).value = this.defaultOptions[key].join(',');
+            } else {
+              document.getElementById(key).value = this.defaultOptions[key];
+            }
+        }
+      }
+    }
+  }
+}
+
 
 /**
  * Constants for DOM elements.
@@ -642,13 +745,102 @@ async function loadActiveModels() {
     } 
     catch (error) {
        
-       
+        if (modelsSelectDropdown && modelsSelectDropdown.options) {
+            while (modelsSelectDropdown.options.length > 0) {
+                modelsSelectDropdown.remove(0);
+            }
+        }
    throw new Error("Error loading models");
     }  finally {
         
         loadingIndicator.style.display = 'none';
     }
 }
+
+/**
+ * Load models from the API.
+ *
+ * @async
+ */
+async function loadModels() {
+    
+    const apiUrl = apiUrlInput;
+    const clientId = clientIdInput;
+    const clientSecret = clientSecretInput;
+
+    try 
+    {
+      await establishConnection();
+      
+        loadingIndicator.style.display = 'flex';
+
+        
+        if (modelsSelectDropdown && modelsSelectDropdown.options) {
+            while (modelsSelectDropdown.options.length > 0) {
+                modelsSelectDropdown.remove(0);
+            }
+        }
+
+        
+        const url = new URL("/api/tags", apiUrl);
+       const res = await makeApiRequest(url, "GET");
+  
+        if (res.ok) {
+            
+            const models = await res.json();
+
+            
+            if (Array.isArray(models.models)) {
+                
+                models.models.forEach(model => {
+                    if(!model.name.includes("embed"))
+                    {
+                      const option = document.createElement("option");
+                      option.value = model.name;
+                      option.text = model.name;
+                      modelsSelectDropdown.add(option);
+                    }
+                });
+
+                
+                let selectedOption = modelsSelectDropdown.options[0].value; 
+
+                
+                for (let i = 0; i < modelsSelectDropdown.options.length; i++) {
+                    if (modelsSelectDropdown.options[i].value === savedModelSelected) {
+                        selectedOption = savedModelSelected;
+                        break;
+                    }
+                }
+
+                
+                modelsSelectDropdown.value = selectedOption;
+
+                
+                savedModelSelected = modelsSelectDropdown.value;
+                localStorage.setItem('modelSelected', savedModelSelected);
+            } else {
+                TempText.textContent = "Error: Unexpected response format.";
+            }
+        } 
+        else  
+        {
+   
+        if (modelsSelectDropdown && modelsSelectDropdown.options) {
+            while (modelsSelectDropdown.options.length > 0) {
+                modelsSelectDropdown.remove(0);
+            }
+        }
+        throw new Error("Error loading models");
+        }
+    } catch (error) {
+    throw new Error("Error loading models");
+    } finally {
+        
+        loadingIndicator.style.display = 'none';
+    }
+}
+
 
 function GetChatHistory() {
   const bubbles = ChatArea.querySelectorAll('pre');
@@ -807,6 +999,34 @@ async function p(chatMessage,res,isStream)
   }   
 }
 
+function getMsgOptions()
+{
+ const options = {
+    num_keep: parseInt(document.getElementById('num_keep').value),
+    seed: parseInt(document.getElementById('seed').value),
+    num_predict: parseInt(document.getElementById('num_predict').value),
+    top_k: parseInt(document.getElementById('top_k').value),
+    top_p: parseFloat(document.getElementById('top_p').value),
+    min_p: parseFloat(document.getElementById('min_p').value),
+    typical_p: parseFloat(document.getElementById('typical_p').value),
+    repeat_last_n: parseInt(document.getElementById('repeat_last_n').value),
+    temperature: parseFloat(document.getElementById('temperature').value),
+    repeat_penalty: parseFloat(document.getElementById('repeat_penalty').value),
+    presence_penalty: parseFloat(document.getElementById('presence_penalty').value),
+    frequency_penalty: parseFloat(document.getElementById('frequency_penalty').value),
+    penalize_newline: document.getElementById('penalize_newline').checked,
+    stop: document.getElementById('stop').value.split(','),
+    numa: document.getElementById('numa').checked,
+    num_ctx: parseInt(document.getElementById('num_ctx').value),
+    num_batch: parseInt(document.getElementById('num_batch').value),
+    num_gpu: parseInt(document.getElementById('num_gpu').value),
+    main_gpu: parseInt(document.getElementById('main_gpu').value),
+    use_mmap: document.getElementById('use_mmap').checked,
+    num_thread: parseInt(document.getElementById('num_thread').value)
+  };
+  
+  return options;
+}
 /**
  * Class for processing streaming JSON data.
  */
@@ -1090,6 +1310,10 @@ const cloudSettingsButtonClose = document.querySelector('#cloud-settings-button-
 const cloudSettingsContainer = document.querySelector('#cloud-settings-container');
 
 
+const chatOptionsButton = document.querySelector('#chat-options-button');
+const chatOptionsButtonClose = document.querySelector('#chat-options-button-close');
+const chatOptionsContainer = document.querySelector('#chat-options-container');
+const chatOptionsSaveButton = document.querySelector('#chat-options-save-button');
 
 const appSettingsButton = document.querySelector('#app-settings-button');
 const appSettingsButtonClose = document.querySelector('#app-settings-button-close');
@@ -1129,6 +1353,8 @@ let savedModelSelected = localStorage.getItem('modelSelected');
 
 
 
+const options = new Options();
+const currentOptions = options.getOptions();
 
 
 
@@ -1148,6 +1374,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }, 100); 
   
   
+  options.loadOptions();
   
     messageInput.focus();
   resize_textbox(); 
@@ -1312,5 +1539,43 @@ systemPrompt= syspromptInput.value;
 
 
 
+
+
+
+function toggleSettingsAside() {
+  if (cloudSettingsContainer.style.display === 'flex' ||
+    llmSettingsContainer.style.display === 'flex' ||
+    appSettingsContainer.style.display === 'flex' ||
+    chatOptionsContainer.style.display === 'flex') {
+    settingsAside.style.display = 'flex';
+  } else {
+    settingsAside.style.display = 'none';
+   } 
+  
+    if (cloudSettingsContainer.style.display === 'flex') {
+   cloudSettingsButton.classList.add('active'); 
+      } else {
+   cloudSettingsButton.classList.remove('active');
+      }   
+      
+       if (chatOptionsContainer.style.display === 'flex') {
+   chatOptionsButton.classList.add('active');
+   options.loadOptions();
+  }else {
+     chatOptionsButton.classList.remove('active');
+  }
+  
+     if (llmSettingsContainer.style.display === 'flex') {
+     llmSettingsButton.classList.add('active'); 
+    } else {
+     llmSettingsButton.classList.remove('active');
+     }
+     
+        if (appSettingsContainer.style.display === 'flex') {
+   appSettingsButton.classList.add('active'); 
+      } else {
+   appSettingsButton.classList.remove('active');
+      }
+}
 </script>
 </html>
