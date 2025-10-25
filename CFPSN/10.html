@@ -655,9 +655,6 @@ async function p(chatMessage,res)
                         
                     });
                 }
-            } else {
-                const resText = await res.text();
-                bubble.textContent += `\&#10;${resText}`;
             }
          messageInput.focus();
  } catch (error) {
