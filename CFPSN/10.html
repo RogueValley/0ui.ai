@@ -600,7 +600,7 @@ const payload = {
     const res = await makeApiRequest(url, "POST", result,null, true);
 
     if (res.ok) {
-      p(chatMessage, res, payload.stream);
+      p(chatMessage, res);
     } else {
       throw new Error("Error loading models");
     }
@@ -610,7 +610,7 @@ const payload = {
  
 }
 
-async function p(chatMessage,res,isStream)
+async function p(chatMessage,res)
 {
    
   try { 
@@ -622,10 +622,10 @@ async function p(chatMessage,res,isStream)
                         });
             const bubble = createBubble("ai", "");
 
-            if (isStream) {
+            {
                 const reader = res.body.getReader();
                 let partialJson = "";
-                const processor = new StreamingJsonProcessor(); 
+                const processor = new JsonProcessor(); 
 
                 while (true) {
                     const { done, value } = await reader.read();
@@ -668,10 +668,7 @@ async function p(chatMessage,res,isStream)
   }   
 }
 
-/**
- * Class for processing streaming JSON data.
- */
-class StreamingJsonProcessor {
+class JsonProcessor {
     constructor() {
         this.buffer = "";
     }
