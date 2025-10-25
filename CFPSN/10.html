@@ -458,19 +458,7 @@ async function establishConnection() {
        loadingIndicator.style.display = 'flex';
        applogo.classList.add('black');
 
-       try {
-        includeCreds = true;
-       const url = new URL("/", apiUrl);
-        response = await makeApiRequest(url, "GET");
 
-        if (response.ok) {
-            connectionReady = true;
-               return;
-        }
-       }
-       catch (error) {
-     
-       } 
 
        applogo.classList.add('green');
   
