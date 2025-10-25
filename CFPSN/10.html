@@ -475,9 +475,8 @@ async function establishConnection() {
           response = await makeApiRequest(url, "GET", null, headers);
 
          if (response.ok) {
-         
-         
            connectionReady = true;
+           return;
          } 
         }
         catch (error) {
