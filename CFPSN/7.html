@@ -387,11 +387,44 @@ footer {
             </div>
         </footer>
 
+<!-- Settings Panel -->
+<div class="settings-panel" id="settings-panel">
+  <!-- Message Options Container -->
+  
+  <!-- App Settings Container -->
 
+  <!-- Cloud Settings Container -->
+  <div id="cloud-settings-container" style="display: none;">
+    <h2>Cloud Settings</h2>
+    <form id="cloud-settings-form">
+      <label for="api-url">API URL:</label><input type="text" id="api-url" name="api-url" value="https://cfp03.learnui.ai/"><br><br>
+      <label for="client-id">Client ID:</label><input type="text" id="client-id" name="client-id"><br><br>
+      <label for="client-secret">Client Secret:</label><input type="text" id="client-secret" name="client-secret"><br><br>
+      <label for="client-stream">Client Stream:</label><input type="checkbox" id="client-stream" value="true" checked><br><br>
+    </form>
+<div class="button-container">
+    <button id="save-settings-button" class="button-save" aria-label="Save cloud settings">&#128190; Save</button>
+    <button id="cloud-settings-button-close" class="button-close" aria-label="Close cloud settings menu">&#9194; Close</button>
+  </div>
+  </div>
+  <!-- LLM Settings Container -->
+  <div id="llm-settings-container" style="display: none;">
+    <h2>LLM Settings</h2>
+    <label for="models-select">Select Model:</label><select id="models-select"><option value="llama3.2:3b-instruct-fp16">[EMPTY]</option></select><br><br>
+    <span id="models-active-title">Active Model: <span id="models-active"></span></span><br>
+<div class="button-container">
+    <button id="llm-settings-button-close" class="button-close" aria-label="Close LLM settings menu">&#9194; Close</button>
+  </div>
+</div>
+  </div>
 
+    <!-- Scripts -->
 </body><script>
 
 
+/**
+ * Constants for DOM elements.
+ */
 const ChatArea = document.querySelector('#chat-body');
 const ChatAreaContainer = document.querySelector('#chat-body');
 
@@ -405,6 +438,11 @@ function resetConnection() {
   connectionReady = false;
   }
   
+/**
+ * Establishes a connection to the API.
+ *
+ * @throws {Error} If not connected or connection fails.
+ */
  
 async function makeApiRequest(url, method, body = null, headers = null, blockOpen= false) {
   const controller = new AbortController();
@@ -1064,6 +1102,7 @@ const llmSettingsButtonClose = document.querySelector('#llm-settings-button-clos
 const llmSettingsContainer = document.querySelector('#llm-settings-container');
 const saveSettingsButton = document.querySelector('#save-settings-button');
 
+const modelsSelectDropdown = document.querySelector('#models-select');
 const messageInput = document.querySelector('#user-input');
 const sendButton = document.querySelector('#send-button');
 const messageContainer = document.querySelector('.input-container');
