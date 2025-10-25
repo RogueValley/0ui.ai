@@ -683,20 +683,12 @@ async function p(chatMessage,res,isStream)
   }   
 }
 
-/**
- * Class for processing streaming JSON data.
- */
 class StreamingJsonProcessor {
     constructor() {
         this.buffer = "";
     }
 
-    /**
-     * Process a chunk of JSON data and return an array of content.
-     *
-     * @param {string} chunk
-     * @returns {string[]}
-     */
+
     processChunk(chunk) {
         this.buffer += chunk;
         let contentArray = [];
@@ -726,13 +718,6 @@ class StreamingJsonProcessor {
         return contentArray;
     }
 
-    /**
-     * Find the index of the next complete JSON object in the buffer.
-     *
-     * @param {string} str
-     * @param {number} startIndex
-     * @returns {number}
-     */
     findNextJsonEndIndex(str, startIndex) {
         let openBraces = 0;
         let openSquares = 0;
@@ -937,23 +922,6 @@ function displayTempOutput(tempTextArea) {
 }
 
 
-const cloudSettingsButton = document.querySelector('#cloud-settings-button');
-const cloudSettingsButtonClose = document.querySelector('#cloud-settings-button-close');
-const cloudSettingsContainer = document.querySelector('#cloud-settings-container');
-
-
-
-const appSettingsButton = document.querySelector('#app-settings-button');
-const appSettingsButtonClose = document.querySelector('#app-settings-button-close');
-const appSettingsContainer = document.querySelector('#app-settings-container');
-const appSaveSysPromptButton = document.querySelector('#app-save-sysprompt-button');
-const syspromptInput = document.querySelector('#app-system-prompt-input');
-
-const llmSettingsButton = document.querySelector('#llm-settings-button');
-const llmSettingsButtonClose = document.querySelector('#llm-settings-button-close');
-const llmSettingsContainer = document.querySelector('#llm-settings-container');
-const saveSettingsButton = document.querySelector('#save-settings-button');
-
 const messageInput = document.querySelector('#user-input');
 const sendButton = document.querySelector('#send-button');
 const messageContainer = document.querySelector('.input-container');
@@ -965,7 +933,7 @@ const apiUrlInput = 'https://cfp02.learnui.ai/';
 const clientIdInput = '6d5ec9d9c25157460af4ef4e53407731.access';
 const clientSecretInput = '5d70ced09cf0b75ed9dc56280509cdce946342745e49f1a5d39a27274cdac260';
 
-const darkModeButton = document.querySelector('#dark-mode-button');
+
 const body = document.body;
 
 
