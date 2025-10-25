@@ -622,10 +622,9 @@ async function p(chatMessage,res)
                         });
             const bubble = createBubble("ai", "");
 
-            {
                 const reader = res.body.getReader();
                 let partialJson = "";
-                const processor = new JsonProcessor(); 
+                const processor = new Processor(); 
 
                 while (true) {
                     const { done, value } = await reader.read();
@@ -655,7 +654,7 @@ async function p(chatMessage,res)
                         
                     });
                 }
-            }
+           
          messageInput.focus();
  } catch (error) {
     throw new Error("Error loading models");
@@ -665,17 +664,12 @@ async function p(chatMessage,res)
   }   
 }
 
-class JsonProcessor {
+
+class Processor {
     constructor() {
         this.buffer = "";
     }
 
-    /**
-     * Process a chunk of JSON data and return an array of content.
-     *
-     * @param {string} chunk
-     * @returns {string[]}
-     */
     processChunk(chunk) {
         this.buffer += chunk;
         let contentArray = [];
@@ -705,13 +699,7 @@ class JsonProcessor {
         return contentArray;
     }
 
-    /**
-     * Find the index of the next complete JSON object in the buffer.
-     *
-     * @param {string} str
-     * @param {number} startIndex
-     * @returns {number}
-     */
+ 
     findNextJsonEndIndex(str, startIndex) {
         let openBraces = 0;
         let openSquares = 0;
