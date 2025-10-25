@@ -759,12 +759,6 @@ class StreamingJsonProcessor {
         return -1;
     }
 
-    /**
-     * Sanitize a JSON string by removing trailing whitespace and commas.
-     *
-     * @param {string} jsonString
-     * @returns {string}
-     */
     sanitizeJson(jsonString) {
         
         let sanitizedString = jsonString.trim();
@@ -776,12 +770,6 @@ class StreamingJsonProcessor {
     }
 }
 
-/**
- * Extract the content from a JSON string.
- *
- * @param {string} jsonString
- * @returns {string|null}
- */
 
 
 function extractContent(jsonString) {
@@ -813,12 +801,6 @@ function extractContent(jsonString) {
   return content;
 }
 
-/**
- * Replaces character encodings in a given text with their corresponding characters.
- *
- * @param {*} text - The input text containing character encodings.
- * @returns {string} The text with character encodings replaced, or an error message if text is not a string.
- */
 function replaceCharEncodings(text) {
   
   if (typeof text !== 'string') {
@@ -835,12 +817,6 @@ function replaceCharEncodings(text) {
     
   };
 
-  /**
-   * Replaces a matched character encoding with its corresponding character.
-   *
-   * @param {string} match - The matched character encoding.
-   * @returns {string} The replaced character or the original match if not found in charMap.
-   */
   function replaceMatch(match) {
     
     if (match.startsWith("\\u")) {
