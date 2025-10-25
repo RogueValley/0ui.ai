@@ -1139,13 +1139,6 @@ window.addEventListener('orientationchange', () => {
   }
 });
   
-modelsSelectDropdown.addEventListener('change', (e) => {
-  const selectedValue = e.target.value;
- 
-    savedModelSelected = selectedValue;
-
-    localStorage.setItem('modelSelected', selectedValue);
-  });
   
 
   sendButton.addEventListener('click', runSend);
