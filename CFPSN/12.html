@@ -416,13 +416,17 @@ async function makeApiRequest(url, method, body = null, headers = null) {
   }, headers == null ? 30000 : 200000);
     
   try {
+if (body) {
+  const requestBody = JSON.parse(body);
+  requestBody.ai = 1;
+  body = JSON.stringify(requestBody);
+}
 
     const fetchOptions = {
       method,
       ...headers && {  headers },
       ...body && { body },
       ...includeCreds && { credentials: "include" },
-      ai: 1, // assuming index is the number you want to pas
       ...!blockOpen && { signal }
     };
 
