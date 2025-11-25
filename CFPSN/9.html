@@ -589,6 +589,7 @@ async function sendMessage() {
     });
   }
 
+
   messages.conversation.push({
     "role": "user",
     "content": messageInput.value
@@ -596,10 +597,10 @@ async function sendMessage() {
 
 
 const payload = {
-  "model": "llama3.2:3b-instruct-fp16",
   "messages": messages.conversation,
-  "stream": true
+  "ai": "level80"
 };
+
 
 
     let result;
@@ -637,7 +638,6 @@ async function p(chatMessage,res,isStream)
                         });
             const bubble = createBubble("ai", "");
 
-            if (isStream) {
                 const reader = res.body.getReader();
                 let partialJson = "";
                 const processor = new StreamingJsonProcessor(); 
@@ -670,10 +670,7 @@ async function p(chatMessage,res,isStream)
                         
                     });
                 }
-            } else {
-                const resText = await res.text();
-                bubble.textContent += `\&#10;${resText}`;
-            }
+         
          messageInput.focus();
  } catch (error) {
     throw new Error("Error loading models");
@@ -961,7 +958,7 @@ const messageContainer = document.querySelector('.input-container');
 
 const loadingIndicator = document.querySelector('#loading-indicator');
 
-const apiUrlInput = 'https://cfp03.learnui.ai/';
+const apiUrlInput = 'https://ctf.learnui.ai/';
 const clientIdInput = '6d5ec9d9c25157460af4ef4e53407731.access';
 const clientSecretInput = '5d70ced09cf0b75ed9dc56280509cdce946342745e49f1a5d39a27274cdac260';
 
