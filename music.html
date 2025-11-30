@@ -69,8 +69,6 @@
             Your browser does not support the audio element.
         </audio>
         <p id="loading-message" style="font-size: 24px; color: #fff;"></p>
-        <label for="song-hash" style="margin-top: 20px;">Song Hash:</label>
-<input type="text" id="song-hash" placeholder="Hash will be generated here">
 
         <div class="debug-info">
             <h2>Settings:</h2>
@@ -113,7 +111,7 @@ $('#start-button').click(function(e) {
         data: JSON.stringify(settings),
         success: function(data, status, jqXHR) {
             const hash = data;
-            $('#song-hash').val(hash); // Put the output into a text box called "song hash"
+            $('#hash-input').val(hash); // Put the output into a text box called "song hash"
         },
         error: function(xhr, status, error) {
             console.error(error);
