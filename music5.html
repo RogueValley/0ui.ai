@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check Song Status</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #2f2f2f;
+            color: #fff;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin-top: 50px;
+        }
+        
+        #hash-input {
+            width: 100%;
+            height: 40px;
+            font-size: 18px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #4f4f4f;
+            color: #fff;
+        }
+        
+        #active-song {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Check Song Status</h1>
+        <label for="hash-input">Hash:</label>
+        <input type="text" id="hash-input" placeholder="Enter hash here">
+        <button type="submit" class="btn btn-primary" id="check-button" style="margin-top: 20px;">Check Status</button>
+        
+        <div id="active-song">
+            <h1>Active Song:</h1>
+            <p id="hash-output"></p>
+            <audio id="music-player" controls></audio>
+            <button type="submit" class="btn btn-primary" id="download-button">Download Music</button>
+            <button type="submit" class="btn btn-primary" id="play-button">Play Music</button>
+        </div>
+        
+        <p id="result" style="font-size: 24px; color: #fff; margin-top: 20px;"></p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+    <script>
+        let hash = '';
+
+        $(document).ready(function() {
+            // Check button event listener
+            $('#check-button').click(function(e) {
+                e.preventDefault();
+                hash = $('#hash-input').val();
+                const settings = { "hash": hash };
+                const url = 'https://nex.ainetguard.com/api/music/check';
+                
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    data: JSON.stringify(settings),
+                    success: function(data, status, jqXHR) {
+                        $('#result').text(`Result: ${JSON.stringify(data, null, 2)}`);
+                        
+                        if (data.status === 'success') {
+                            showActiveSong();
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(error);
+                        alert('Error checking song status');
+                        $('#result').text('Result: Error');
+                    }
+                });
+            });
+
+            // Download button event listener
+            $('#download-button').click(function(e) {
+                e.preventDefault();
+                
+                const url = 'https://nex.ainetguard.com/api/music/get';
+                const settings = { "hash": hash };
+                
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    data: JSON.stringify(settings),
+                    success: function(data, status, jqXHR) {
+                        var blob = new Blob([data], {type: "audio/mpeg"});
+                        var link = document.createElement('a');
+                        link.href = window.URL.createObjectURL(blob);
+                        link.download = 'song.mp3';
+                        link.click();
+                        
+                        console.log('Music downloaded successfully!');
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(error);
+                        alert('Error downloading music');
+                    }
+                });
+            });
+
+            // Play button event listener
+            $('#play-button').click(function(e) {
+                e.preventDefault();
+                
+                const url = 'https://nex.ainetguard.com/api/music/get';
+                const settings = { "hash": hash };
+                
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    data: JSON.stringify(settings),
+                    success: function(data, status, jqXHR) {
+                        var blob = new Blob([data], {type: "audio/mpeg"});
+                        var link = document.createElement('a');
+                        link.href = window.URL.createObjectURL(blob);
+                        $('#music-player').attr('src', link.href);
+                        
+                        console.log('Music playing!');
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(error);
+                        alert('Error playing music');
+                    }
+                });
+            });
+        });
+
+        function showActiveSong() {
+            $('#active-song').show();
+            $('#hash-output').text(hash);
+        }
+    </script>
+</body>
+</html>
+
