@@ -54,7 +54,8 @@
                     },
                     data: JSON.stringify(settings),
                     success: function(data, status, jqXHR) {
-                        $('#result').text(`Result: ${data}`);
+$('#result').text(`Result: ${JSON.stringify(data, null, 2)}`);
+
                     },
                     error: function(xhr, status, error) {
                         console.error(error);
