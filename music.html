@@ -47,6 +47,21 @@
     <div class="container">
         <h1>Debug Page - Song Generator</h1>
         <button type="submit" class="btn btn-primary" id="start-button">Start Song Generation</button>
+        <label for="song-style" style="margin-top: 20px;">Song Style:</label>
+        <input type="text" id="song-style" value="Medlodic Soft Female Tech Magic">
+        <br>
+        <label for="song-lyric" style="margin-top: 10px;">Song Lyric:</label>
+        <textarea id="song-lyric" rows="4" cols="50">hello world. this. is. the AI revolution.</textarea>
+        <br>
+        <label for="song-seed" style="margin-top: 10px;">Song Seed:</label>
+        <input type="text" id="song-seed" value="158">
+        <br>
+        <label for="song-seconds" style="margin-top: 10px;">Song Seconds:</label>
+        <input type="text" id="song-seconds" value="12">
+        <br>
+        <label for="workflow-id" style="margin-top: 10px;">Workflow ID:</label>
+        <input type="text" id="workflow-id" value="64144464">
+        <br>
         <label for="hash-input" style="margin-top: 20px;">Hash:</label>
         <input type="text" id="hash-input" placeholder="Hash will be generated here">
         <button type="submit" class="btn btn-primary" id="check-button" style="display: none; margin-top: 20px;">Check Song Status</button>
@@ -75,7 +90,12 @@
             // Start song generation button event listener
             $('#start-button').click(function(e) {
                 e.preventDefault();
-                const settings = {};
+                const songStyle = $('#song-style').val();
+                const songLyric = $('#song-lyric').val();
+                const songSeed = $('#song-seed').val();
+                const songSeconds = $('#song-seconds').val();
+                const workflowId = $('#workflow-id').val();
+                const settings = { "songStyle": songStyle, "songLyric": songLyric, "songSeed": songSeed, "songSeconds": songSeconds, "workflowId": workflowId };
                 const url = 'https://nex.ainetguard.com/api/music/start';
                 
                 $('#start-settings').text('Settings: ' + JSON.stringify(settings));
@@ -92,6 +112,7 @@
                         const hash = data;
                         $('#hash-input').val(hash);
                         $('#check-button').show();
+                        $('#get-button').show();
                         $('#start-result').text('Result: ' + JSON.stringify(data));
                     },
                     error: function(xhr, status, error) {
@@ -121,9 +142,9 @@
                     data: JSON.stringify(settings),
                     success: function(data, status, jqXHR) {
                         if (data === true) {
-                            $('#get-button').show();
+                            alert('Song is ready');
                         } else {
-                            alert('Song does not exist yet');
+                            alert('Song is not ready yet');
                         }
                         $('#check-result').text('Result: ' + JSON.stringify(data));
                     },
