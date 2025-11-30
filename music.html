@@ -77,38 +77,39 @@
     <script>
         $(document).ready(function() {
             // Start song generation button event listener
-            $('#start-button').click(function(e) {
-                e.preventDefault();
-                const songStyle = $('#song-style').val();
-                const songLyric = $('#song-lyric').val();
-                const songSeed = $('#song-seed').val();
-                const songSeconds = $('#song-seconds').val();
-                const workflowId = $('#workflow-id').val();
-                const settings = { "songStyle": songStyle, "songLyric": songLyric, "songSeed": songSeed, "songSeconds": songSeconds, "workflowId": workflowId };
-                const url = 'https://nex.ainetguard.com/api/music/start';
-                
-                $('#start-settings').text('Settings: ' + JSON.stringify(settings));
-                $('#start-url').text('URL: ' + url);
-                
-                $.ajax({
-                    type: 'POST',
-                    url: url,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    data: JSON.stringify(settings),
-                    success: function(data, status, jqXHR) {
-                        const hash = data;
-                        $('#song-hash-input').val(hash);
-                        $('#get-button').show();
-                    },
-                    error: function(xhr, status, error) {
-                        console.error(error);
-                        alert('Error starting song generation');
-                        $('#start-result').text('Result: Error');
-                    }
-                });
-            });
+// Start song generation button event listener
+$('#start-button').click(function(e) {
+    e.preventDefault();
+    const songStyle = $('#song-style').val();
+    const songLyric = $('#song-lyric').val();
+    const songSeed = $('#song-seed').val();
+    const songSeconds = $('#song-seconds').val();
+    const workflowId = $('#workflow-id').val();
+    const settings = { "songStyle": songStyle, "songLyric": songLyric, "songSeed": songSeed, "songSeconds": songSeconds, "workflowId": workflowId };
+    const url = 'https://nex.ainetguard.com/api/music/start';
+    
+    $('#start-settings').text('Settings: ' + JSON.stringify(settings));
+    $('#start-url').text('URL: ' + url);
+    
+    $.ajax({
+        type: 'POST',
+        url: url,
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: JSON.stringify(settings),
+        success: function(data, status, jqXHR) {
+            const hash = data.replace(/"/g, ''); // Remove double quotes from the hash value
+            $('#song-hash-input').val(hash);
+            $('#get-button').show();
+        },
+        error: function(xhr, status, error) {
+            console.error(error);
+            alert('Error starting song generation');
+            $('#start-result').text('Result: Error');
+        }
+    });
+});
 
             // Get song button event listener
             $('#get-button').click(function(e) {
