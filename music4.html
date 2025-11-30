@@ -3,72 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Download Song</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <title>Download Music</title>
     <style>
         body {
             background-color: #2f2f2f;
             color: #fff;
+            font-family: Arial, sans-serif;
         }
-        
+
         .container {
-            max-width: 800px;
-            margin-top: 50px;
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            background-color: #4f4f4f;
         }
-        
-        #hash-input {
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        input[type="text"] {
             width: 100%;
             height: 40px;
             font-size: 18px;
             padding: 10px;
             border: 1px solid #ccc;
-            background-color: #4f4f4f;
+            background-color: #6f6f6f;
             color: #fff;
+            margin-bottom: 20px;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            height: 40px;
+            font-size: 18px;
+            padding: 10px;
+            border: none;
+            background-color: #8f8f8f;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #9f9f9f;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Download Song</h1>
-        <label for="hash-input">Hash:</label>
-        <input type="text" id="hash-input" placeholder="Enter hash here">
-        <button type="submit" class="btn btn-primary" id="download-button" style="margin-top: 20px;">Download Song</button>
+        <h1>Download Music</h1>
+        <form id="download-form">
+            <label for="api-url">API URL:</label>
+            <input type="text" id="api-url" value="https://nex.ainetguard.com/api/music/get">
+
+            <label for="hash-input">Hash:</label>
+            <input type="text" id="hash-input" value="40d5b410daa2950812b28f7e9a98a0096b2c974">
+
+            <label for="filename-input">Filename:</label>
+            <input type="text" id="filename-input" value="AI-PIE.mp3">
+
+            <button type="submit">Download Music</button>
+        </form>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
     <script>
-        $(document).ready(function() {
-            // Download button event listener
-            $('#download-button').click(function(e) {
-                e.preventDefault();
-                const hash = $('#hash-input').val();
-                const settings = { "hash": hash };
-                const url = 'https://nex.ainetguard.com/api/music/get';
-                
-                $.ajax({
-                    type: 'POST',
-                    url: url,
+        const form = document.getElementById('download-form');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const apiUrl = document.getElementById('api-url').value;
+            const hash = document.getElementById('hash-input').value;
+            const filename = document.getElementById('filename-input').value;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    data: JSON.stringify(settings),
-                    xhrFields: {
-                        responseType: 'blob'
-                    },
-                    success: function(data, status, jqXHR) {
-                        const blob = new Blob([data], { type: 'audio/mp3' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'song.mp3';
-                        a.click();
-                    },
-                    error: function(xhr, status, error) {
-                        console.error(error);
-                        alert('Error downloading song');
-                    }
+                    body: JSON.stringify({ hash: hash })
                 });
-            });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+
+                console.log('Music downloaded successfully!');
+            } catch (error) {
+                console.error('Error downloading music:', error);
+            }
         });
     </script>
 </body>
