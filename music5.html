@@ -71,8 +71,11 @@
                     success: function(data, status, jqXHR) {
                         $('#result').text(`Result: ${JSON.stringify(data, null, 2)}`);
                         
-                        if (data.status === 'success') {
+                        if (data.exists === true) {
                             showActiveSong();
+                        } else {
+                            $('#active-song').hide();
+                            alert('The song does not exist');
                         }
                     },
                     error: function(xhr, status, error) {
