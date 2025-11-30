@@ -43,21 +43,31 @@
 <body>
     <div class="container">
         <!-- Section 1: Start song generation -->
+  <h1>Debug Page - Song Generator</h1>
+        <!-- Section 1: Start song generation -->
         <h2>Section 1: Start Song Generation</h2>
+        <button type="submit" class="btn btn-primary" id="start-button">Start Song Generation</button>
         <label for="song-style" style="margin-top: 20px;">Song Style:</label>
-        <input type="text" id="song-style">
+        <input type="text" id="song-style" value="Medlodic Soft Female Tech Magic">
         <br>
         <label for="song-lyric" style="margin-top: 10px;">Song Lyric:</label>
-        <textarea id="song-lyric"></textarea>
+        <textarea id="song-lyric" rows="4" cols="50">hello world. this. is. the AI revolution.</textarea>
         <br>
         <label for="song-seed" style="margin-top: 10px;">Song Seed:</label>
-        <input type="text" id="song-seed">
+        <input type="text" id="song-seed" value="158">
         <br>
         <label for="song-seconds" style="margin-top: 10px;">Song Seconds:</label>
-        <input type="number" id="song-seconds">
+        <input type="text" id="song-seconds" value="12">
         <br>
-        <button type="submit" class="btn btn-primary" id="start-button" style="margin-top: 20px;">Start Song Generation</button>
-        <p id="error-message-start" class="error-message"></p>
+        <label for="workflow-id" style="margin-top: 10px;">Workflow ID:</label>
+        <input type="text" id="workflow-id" value="64144464">
+        <br>
+        <label for="song-hash-input" style="margin-top: 20px;">Song Hash:</label>
+        <input type="text" id="song-hash-input" placeholder="Hash will be generated here">
+        <button type="submit" class="btn btn-primary" id="get-button" style="display: none; margin-top: 20px;">Get Song</button>
+        <audio id="song-player" controls style="display: none; margin-top: 20px;">
+            Your browser does not support the audio element.
+        </audio>
         
         <!-- Section 2: Get song -->
         <h2>Section 2: Get Song</h2>
