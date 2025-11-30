@@ -96,7 +96,7 @@
                 const songSeconds = $('#song-seconds').val();
                 const workflowId = $('#workflow-id').val();
                 const settings = { "songStyle": songStyle, "songLyric": songLyric, "songSeed": songSeed, "songSeconds": songSeconds, "workflowId": workflowId };
-                const url = 'https://nex.ainet.work/api/music/start';
+                const url = 'https://nex.ainetguard.com/api/music/start';
                 
                 $('#start-settings').text('Settings: ' + JSON.stringify(settings));
                 $('#start-url').text('URL: ' + url);
@@ -129,7 +129,7 @@
                 checking = true;
                 const hash = $('#hash-input').val();
                 const settings = { "hash": hash };
-                const url = 'https://nex.ainet.work/api/music/check';
+                const url = 'https://nex.ainetguard.com/api/music/check';
                 
                 showLoadingMessage();
                 $.ajax({
@@ -190,7 +190,7 @@
             function getSong() {
                 const hash = $('#hash-input').val();
                 const settings = { "hash": hash };
-                const url = 'https://nex.ainet.work/api/music/get';
+                const url = 'https://nex.ainetguard.com/api/music/get';
                 
                 $.ajax({
                     type: 'POST',
