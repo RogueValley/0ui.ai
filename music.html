@@ -68,6 +68,7 @@
         <audio id="song-player" controls style="display: none; margin-top: 20px;">
             Your browser does not support the audio element.
         </audio>
+        <p id="loading-message" style="font-size: 24px; color: #fff;"></p>
         
         <div class="debug-info">
             <h2>Settings:</h2>
@@ -95,7 +96,7 @@
                 const songSeconds = $('#song-seconds').val();
                 const workflowId = $('#workflow-id').val();
                 const settings = { "songStyle": songStyle, "songLyric": songLyric, "songSeed": songSeed, "songSeconds": songSeconds, "workflowId": workflowId };
-                const url = 'https://nex.ainetguard.com/api/music/start';
+                const url = 'https://nex.ainet.work/api/music/start';
                 
                 $('#start-settings').text('Settings: ' + JSON.stringify(settings));
                 $('#start-url').text('URL: ' + url);
@@ -122,13 +123,15 @@
 
             // Check song status function
             let checking = false;
+            let countdown = 5;
             function checkSongStatus() {
                 if (checking) return;
                 checking = true;
                 const hash = $('#hash-input').val();
                 const settings = { "hash": hash };
-                const url = 'https://nex.ainetguard.com/api/music/check';
+                const url = 'https://nex.ainet.work/api/music/check';
                 
+                showLoadingMessage();
                 $.ajax({
                     type: 'POST',
                     url: url,
@@ -138,17 +141,19 @@
                     data: JSON.stringify(settings),
                     success: function(data, status, jqXHR) {
                         checking = false;
+                        hideLoadingMessage();
                         $('#check-url').text('URL: ' + url);
                         if (data === true) {
                             $('#check-result').text('Result: Song is ready');
-                            getSong();
+                            showGetButton();
                         } else {
-                            $('#check-result').text('Result: Checking again in 5 seconds...');
-                            setTimeout(checkSongStatus, 5000);
+                            countdown -= 1;
+                            checkSongStatus();
                         }
                     },
                     error: function(xhr, status, error) {
                         checking = false;
+                        hideLoadingMessage();
                         console.error(error);
                         alert('Error checking song status');
                         $('#check-result').text('Result: Error');
@@ -156,11 +161,36 @@
                 });
             }
 
-            // Get song button event listener
+            // Show loading message
+            function showLoadingMessage() {
+                countdown = 5;
+                const intervalId = setInterval(function() {
+                    if (countdown > 0) {
+                        $('#loading-message').text(`Checking song status in ${countdown} seconds...`);
+                        countdown -= 1;
+                    } else {
+                        clearInterval(intervalId);
+                        checkSongStatus();
+                    }
+                }, 1000);
+            }
+
+            // Hide loading message
+            function hideLoadingMessage() {
+                $('#loading-message').text('');
+            }
+
+            // Show get button
+            function showGetButton() {
+                $('#get-button').show();
+                getSong();
+            }
+
+            // Get song function
             function getSong() {
                 const hash = $('#hash-input').val();
                 const settings = { "hash": hash };
-                const url = 'https://nex.ainetguard.com/api/music/get';
+                const url = 'https://nex.ainet.work/api/music/get';
                 
                 $.ajax({
                     type: 'POST',
