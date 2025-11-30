@@ -64,7 +64,6 @@
         <br>
         <label for="hash-input" style="margin-top: 20px;">Hash:</label>
         <input type="text" id="hash-input" placeholder="Hash will be generated here">
-        <button type="submit" class="btn btn-primary" id="check-button" style="display: none; margin-top: 20px;">Check Song Status</button>
         <button type="submit" class="btn btn-primary" id="get-button" style="display: none; margin-top: 20px;">Get Song</button>
         <audio id="song-player" controls style="display: none; margin-top: 20px;">
             Your browser does not support the audio element.
@@ -111,9 +110,7 @@
                     success: function(data, status, jqXHR) {
                         const hash = data;
                         $('#hash-input').val(hash);
-                        $('#check-button').show();
-                        $('#get-button').show();
-                        $('#start-result').text('Result: ' + JSON.stringify(data));
+                        checkSongStatus();
                     },
                     error: function(xhr, status, error) {
                         console.error(error);
@@ -123,15 +120,14 @@
                 });
             });
 
-            // Check song status button event listener
-            $('#check-button').click(function(e) {
-                e.preventDefault();
+            // Check song status function
+            let checking = false;
+            function checkSongStatus() {
+                if (checking) return;
+                checking = true;
                 const hash = $('#hash-input').val();
                 const settings = { "hash": hash };
                 const url = 'https://nex.ainetguard.com/api/music/check';
-                
-                $('#start-settings').text('Settings: ' + JSON.stringify(settings));
-                $('#check-url').text('URL: ' + url);
                 
                 $.ajax({
                     type: 'POST',
@@ -141,30 +137,30 @@
                     },
                     data: JSON.stringify(settings),
                     success: function(data, status, jqXHR) {
+                        checking = false;
+                        $('#check-url').text('URL: ' + url);
                         if (data === true) {
-                            alert('Song is ready');
+                            $('#check-result').text('Result: Song is ready');
+                            getSong();
                         } else {
-                            alert('Song is not ready yet');
+                            $('#check-result').text('Result: Checking again in 5 seconds...');
+                            setTimeout(checkSongStatus, 5000);
                         }
-                        $('#check-result').text('Result: ' + JSON.stringify(data));
                     },
                     error: function(xhr, status, error) {
+                        checking = false;
                         console.error(error);
                         alert('Error checking song status');
                         $('#check-result').text('Result: Error');
                     }
                 });
-            });
+            }
 
             // Get song button event listener
-            $('#get-button').click(function(e) {
-                e.preventDefault();
+            function getSong() {
                 const hash = $('#hash-input').val();
                 const settings = { "hash": hash };
                 const url = 'https://nex.ainetguard.com/api/music/get';
-                
-                $('#start-settings').text('Settings: ' + JSON.stringify(settings));
-                $('#get-url').text('URL: ' + url);
                 
                 $.ajax({
                     type: 'POST',
@@ -181,6 +177,7 @@
                         const url = URL.createObjectURL(blob);
                         document.getElementById('song-player').src = url;
                         document.getElementById('song-player').style.display = 'block';
+                        $('#get-url').text('URL: ' + url);
                         $('#get-result').text('Result: Success');
                     },
                     error: function(xhr, status, error) {
@@ -189,7 +186,7 @@
                         $('#get-result').text('Result: Error');
                     }
                 });
-            });
+            }
         });
     </script>
 </body>
