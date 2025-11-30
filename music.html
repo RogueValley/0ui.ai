@@ -22,16 +22,26 @@
             left: 50%;
             transform: translate(-50%, -50%);
         }
+        
+        #hash-input {
+            width: 100%;
+            height: 40px;
+            font-size: 18px;
+            padding: 10px;
+            margin-top: 20px;
+            border: 1px solid #ccc;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Song Generator</h1>
         <button type="submit" class="btn btn-primary" id="start-button">Start Song Generation</button>
-        <input type="text" class="form-control" id="hash-input" placeholder="Hash will be generated here" style="margin-top: 10px;">
-        <button type="submit" class="btn btn-primary" id="check-button" style="display: none; margin-top: 10px;">Check Song Status</button>
-        <button type="submit" class="btn btn-primary" id="get-button" style="display: none; margin-top: 10px;">Get Song</button>
-        <audio id="song-player" controls style="display: none; margin-top: 10px;">
+        <label for="hash-input" style="margin-top: 20px;">Hash:</label>
+        <input type="text" id="hash-input" placeholder="Hash will be generated here">
+        <button type="submit" class="btn btn-primary" id="check-button" style="display: none; margin-top: 20px;">Check Song Status</button>
+        <button type="submit" class="btn btn-primary" id="get-button" style="display: none; margin-top: 20px;">Get Song</button>
+        <audio id="song-player" controls style="display: none; margin-top: 20px;">
             Your browser does not support the audio element.
         </audio>
 
@@ -49,15 +59,9 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    data: JSON.stringify({
-                        "songStyle": "Medlodic Soft Female Tech Magic",
-                        "songLyric": "Hello World!",
-                        "songSeed": "158",
-                        "songSeconds": "12",
-                        "workflowId": "64144464"
-                    }),
+                    data: JSON.stringify({}),
                     success: function(data, status, jqXHR) {
-                        const hash = data.hash;
+                        const hash = data;
                         $('#hash-input').val(hash);
                         $('#check-button').show();
                     },
@@ -83,7 +87,7 @@
                         "hash": hash
                     }),
                     success: function(data, status, jqXHR) {
-                        if (data.exists) {
+                        if (data === true) {
                             $('#get-button').show();
                         } else {
                             alert('Song does not exist yet');
