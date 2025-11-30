@@ -52,6 +52,7 @@
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
     <script>
         let hash = '';
+        let musicUrl = '';
 
         $(document).ready(function() {
             // Check button event listener
@@ -72,7 +73,7 @@
                         $('#result').text(`Result: ${JSON.stringify(data, null, 2)}`);
                         
                         if (data.exists === true) {
-                            showActiveSong();
+                            getMusicUrl();
                         } else {
                             $('#active-song').hide();
                             alert('The song does not exist');
@@ -90,61 +91,48 @@
             $('#download-button').click(function(e) {
                 e.preventDefault();
                 
-                const url = 'https://nex.ainetguard.com/api/music/get';
-                const settings = { "hash": hash };
-                
-                $.ajax({
-                    type: 'POST',
-                    url: url,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    data: JSON.stringify(settings),
-                    success: function(data, status, jqXHR) {
-                        var blob = new Blob([data], {type: "audio/mpeg"});
-                        var link = document.createElement('a');
-                        link.href = window.URL.createObjectURL(blob);
-                        link.download = 'song.mp3';
-                        link.click();
-                        
-                        console.log('Music downloaded successfully!');
-                    },
-                    error: function(xhr, status, error) {
-                        console.error(error);
-                        alert('Error downloading music');
-                    }
-                });
+                if (musicUrl !== '') {
+                    window.open(musicUrl, '_blank');
+                } else {
+                    alert('Please check the song status first');
+                }
             });
 
             // Play button event listener
             $('#play-button').click(function(e) {
                 e.preventDefault();
                 
-                const url = 'https://nex.ainetguard.com/api/music/get';
-                const settings = { "hash": hash };
-                
-                $.ajax({
-                    type: 'POST',
-                    url: url,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    data: JSON.stringify(settings),
-                    success: function(data, status, jqXHR) {
-                        var blob = new Blob([data], {type: "audio/mpeg"});
-                        var link = document.createElement('a');
-                        link.href = window.URL.createObjectURL(blob);
-                        $('#music-player').attr('src', link.href);
-                        
-                        console.log('Music playing!');
-                    },
-                    error: function(xhr, status, error) {
-                        console.error(error);
-                        alert('Error playing music');
-                    }
-                });
+                if (musicUrl !== '') {
+                    $('#music-player').attr('src', musicUrl);
+                    $('#music-player')[0].play();
+                } else {
+                    alert('Please check the song status first');
+                }
             });
         });
+
+        function getMusicUrl() {
+            const url = 'https://nex.ainetguard.com/api/music/get';
+            const settings = { "hash": hash };
+            
+            $.ajax({
+                type: 'POST',
+                url: url,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                data: JSON.stringify(settings),
+                success: function(data, status, jqXHR) {
+                    musicUrl = URL.createObjectURL(new Blob([data], {type: "audio/mpeg"}));
+                    
+                    showActiveSong();
+                },
+                error: function(xhr, status, error) {
+                    console.error(error);
+                    alert('Error getting music URL');
+                }
+            });
+        }
 
         function showActiveSong() {
             $('#active-song').show();
