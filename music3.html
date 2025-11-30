@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get Song</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #2f2f2f;
+            color: #fff;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin-top: 50px;
+        }
+        
+        #hash-input {
+            width: 100%;
+            height: 40px;
+            font-size: 18px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #4f4f4f;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Get Song</h1>
+        <label for="hash-input">Hash:</label>
+        <input type="text" id="hash-input" placeholder="Enter hash here">
+        <button type="submit" class="btn btn-primary" id="get-button" style="margin-top: 20px;">Get Song</button>
+        <audio id="song-player" controls style="display: none; margin-top: 20px;">
+            Your browser does not support the audio element.
+        </audio>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Get button event listener
+            $('#get-button').click(function(e) {
+                e.preventDefault();
+                const hash = $('#hash-input').val();
+                const settings = { "hash": hash };
+                const url = 'https://nex.ainetguard.com/api/music/get';
+                
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    data: JSON.stringify(settings),
+                    xhrFields: {
+                        responseType: 'blob'
+                    },
+                    success: function(data, status, jqXHR) {
+                        const blob = new Blob([data], { type: 'audio/mp3' });
+                        const url = URL.createObjectURL(blob);
+                        document.getElementById('song-player').src = url;
+                        document.getElementById('song-player').style.display = 'block';
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(error);
+                        alert('Error getting song');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+
