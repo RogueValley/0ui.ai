@@ -124,6 +124,7 @@
             // Check song status function
             let checking = false;
             let countdown = 5;
+            let intervalId;
             function checkSongStatus() {
                 if (checking) return;
                 checking = true;
@@ -142,18 +143,22 @@
                     success: function(data, status, jqXHR) {
                         checking = false;
                         hideLoadingMessage();
+                        clearInterval(intervalId);
                         $('#check-url').text('URL: ' + url);
                         if (data === true) {
                             $('#check-result').text('Result: Song is ready');
-                            showGetButton();
+                            getSong();
                         } else {
                             countdown -= 1;
-                            checkSongStatus();
+                            intervalId = setInterval(function() {
+                                checkSongStatus();
+                            }, 5000);
                         }
                     },
                     error: function(xhr, status, error) {
                         checking = false;
                         hideLoadingMessage();
+                        clearInterval(intervalId);
                         console.error(error);
                         alert('Error checking song status');
                         $('#check-result').text('Result: Error');
@@ -164,26 +169,12 @@
             // Show loading message
             function showLoadingMessage() {
                 countdown = 5;
-                const intervalId = setInterval(function() {
-                    if (countdown > 0) {
-                        $('#loading-message').text(`Checking song status in ${countdown} seconds...`);
-                        countdown -= 1;
-                    } else {
-                        clearInterval(intervalId);
-                        checkSongStatus();
-                    }
-                }, 1000);
+                $('#loading-message').text(`Checking song status in ${countdown} seconds...`);
             }
 
             // Hide loading message
             function hideLoadingMessage() {
                 $('#loading-message').text('');
-            }
-
-            // Show get button
-            function showGetButton() {
-                $('#get-button').show();
-                getSong();
             }
 
             // Get song function
