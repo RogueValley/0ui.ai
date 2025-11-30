@@ -111,29 +111,29 @@
             });
         });
 
-        function getMusicUrl() {
-            const url = 'https://nex.ainetguard.com/api/music/get';
-            const settings = { "hash": hash };
-            
-            $.ajax({
-                type: 'POST',
-                url: url,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                data: JSON.stringify(settings),
-                success: function(data, status, jqXHR) {
-                    const blob = new Blob([data], { type: 'audio/mp3' });
-                    musicUrl = URL.createObjectURL(blob);
-                    
-                    showActiveSong();
-                },
-                error: function(xhr, status, error) {
-                    console.error(error);
-                    alert('Error getting music URL');
-                }
-            });
-        }
+function getMusicUrl() {
+    const url = 'https://nex.ainetguard.com/api/music/get';
+    const settings = { "hash": hash };
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(settings)
+    })
+    .then(response => response.arrayBuffer())
+    .then(arrayBuffer => {
+        const blob = new Blob([arrayBuffer], { type: 'audio/mp3' });
+        musicUrl = URL.createObjectURL(blob);
+        
+        showActiveSong();
+    })
+    .catch(error => {
+        console.error(error);
+        alert('Error getting music URL');
+    });
+}
 
         function showActiveSong() {
             $('#active-song').show();
