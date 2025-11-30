@@ -45,8 +45,6 @@
             <button type="submit" class="btn btn-primary" id="download-button">Download Music</button>
             <button type="submit" class="btn btn-primary" id="play-button">Play Music</button>
         </div>
-        
-        <p id="result" style="font-size: 24px; color: #fff; margin-top: 20px;"></p>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
@@ -70,7 +68,7 @@
                     },
                     data: JSON.stringify(settings),
                     success: function(data, status, jqXHR) {
-                        $('#result').text(`Result: ${JSON.stringify(data, null, 2)}`);
+                        console.log(`Result: ${JSON.stringify(data)}`);
                         
                         if (data.exists === true) {
                             getMusicUrl();
@@ -82,7 +80,6 @@
                     error: function(xhr, status, error) {
                         console.error(error);
                         alert('Error checking song status');
-                        $('#result').text('Result: Error');
                     }
                 });
             });
@@ -92,7 +89,10 @@
                 e.preventDefault();
                 
                 if (musicUrl !== '') {
-                    window.open(musicUrl, '_blank');
+                    const a = document.createElement('a');
+                    a.href = musicUrl;
+                    a.download = 'song.mp3';
+                    a.click();
                 } else {
                     alert('Please check the song status first');
                 }
@@ -123,7 +123,8 @@
                 },
                 data: JSON.stringify(settings),
                 success: function(data, status, jqXHR) {
-                    musicUrl = URL.createObjectURL(new Blob([data], {type: "audio/mpeg"}));
+                    const blob = new Blob([data], { type: 'audio/mp3' });
+                    musicUrl = URL.createObjectURL(blob);
                     
                     showActiveSong();
                 },
