@@ -811,7 +811,7 @@ async function loadModels() {
         }
 
         
-        const url = new URLadd("/api/tags", apiUrl);
+        const url = URLadd("/api/tags", apiUrl);
        const res = await makeApiRequest(url, "GET");
   
         if (res.ok) {
