@@ -596,7 +596,7 @@ async function makeApiRequest(url, method, body = null, headers = null, blockOpe
     clearTimeout(timerId); 
 
     if (!response.ok) {
-      throw new Error(`API request failed with status code ${response.status}: ${await response.text()}`);
+      throw new Error(`API request failed with status code ${response}: ${await response.text()}`);
     }
 
     return response;
