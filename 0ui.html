@@ -1458,15 +1458,7 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleSettingsAside();
   });
 
-chatOptionsButton.addEventListener('click', () => {
-   if (chatOptionsContainer.style.display === 'none') {
-      chatOptionsContainer.style.display = 'flex';
-   options.loadOptions();
-  }else {
-     chatOptionsContainer.style.display = 'none';
-  }
-  toggleSettingsAside();
-});
+
 
 chatOptionsButtonClose.addEventListener('click', () => {
   chatOptionsContainer.style.display = 'none';
