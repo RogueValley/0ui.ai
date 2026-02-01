@@ -628,7 +628,7 @@ async function establishConnection() {
 
        try {
         includeCreds = true;
-       const url = new URL("/api/ps", apiUrl);
+       const url = URLadd("/api/ps", apiUrl);
         response = await makeApiRequest(url, "GET");
 
         if (response.ok) {
@@ -648,7 +648,7 @@ async function establishConnection() {
          }
          
          const headers = { "CF-Access-Client-Id": clientId, "CF-Access-Client-Secret": clientSecret, "Content-Type": "application/json", "ai": "1" };
-         const url = new URL("", apiUrl);
+         const url = new URLadd("", apiUrl);
 
          
          includeCreds = true;
@@ -668,7 +668,7 @@ async function establishConnection() {
   
         
       try {
-       const url = new URL("/api/ps", apiUrl);
+       const url = new URLadd("/api/ps", apiUrl);
         includeCreds = false;
         response = await makeApiRequest(url, "GET");
       
@@ -731,7 +731,7 @@ async function loadActiveModels() {
   
       }
         
-        const url = new URL("/api/ps", apiUrl);
+        const url = new URLadd("/api/ps", apiUrl);
         const res = await makeApiRequest(url, "GET");
        
 
@@ -811,7 +811,7 @@ async function loadModels() {
         }
 
         
-        const url = new URL("/api/tags", apiUrl);
+        const url = new URLadd("/api/tags", apiUrl);
        const res = await makeApiRequest(url, "GET");
   
         if (res.ok) {
@@ -956,7 +956,7 @@ const payload = {
 
     await establishConnection();
 
-    const url = new URL("/api/chat", apiUrl);
+    const url = URLadd("/api/chat", apiUrl);
     const res = await makeApiRequest(url, "POST", result,null, true);
 
     if (res.ok) {
@@ -1185,6 +1185,16 @@ function extractContent(jsonString) {
 
   return content;
 }
+
+function URLadd(path, baseurl) {
+  if (baseurl.endsWith('/')) {
+    return baseurl + path.replace(/^\/+/, '');
+  } else {
+    return baseurl + '/' + path.replace(/^\/+/, '');
+  }
+}
+
+
 
 /**
  * Replaces character encodings in a given text with their corresponding characters.
