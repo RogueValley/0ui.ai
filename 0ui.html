@@ -668,7 +668,7 @@ async function establishConnection() {
   
         
       try {
-       const url = new URLadd("/api/ps", apiUrl);
+       const url = URLadd("/api/ps", apiUrl);
         includeCreds = false;
         response = await makeApiRequest(url, "GET");
       
@@ -731,7 +731,7 @@ async function loadActiveModels() {
   
       }
         
-        const url = new URLadd("/api/ps", apiUrl);
+        const url = URLadd("/api/ps", apiUrl);
         const res = await makeApiRequest(url, "GET");
        
 
