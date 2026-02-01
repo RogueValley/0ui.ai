@@ -1341,7 +1341,6 @@ const cloudSettingsContainer = document.querySelector('#cloud-settings-container
 
 const chatOptionsButton = document.querySelector('#chat-options-button');
 const chatOptionsButtonClose = document.querySelector('#chat-options-button-close');
-const chatOptionsContainer = document.querySelector('#chat-options-container');
 const chatOptionsSaveButton = document.querySelector('#chat-options-save-button');
 
 const appSettingsButton = document.querySelector('#app-settings-button');
@@ -1459,11 +1458,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
 
-
-chatOptionsButtonClose.addEventListener('click', () => {
-  chatOptionsContainer.style.display = 'none';
-    toggleSettingsAside();
-});
 chatOptionsSaveButton.addEventListener('click', () => {
  const getOptions= options.getOptions();
   options.saveOptions(getOptions);
@@ -1673,8 +1667,7 @@ systemPrompt= syspromptInput.value;
 function toggleSettingsAside() {
   if (cloudSettingsContainer.style.display === 'flex' ||
     llmSettingsContainer.style.display === 'flex' ||
-    appSettingsContainer.style.display === 'flex' ||
-    chatOptionsContainer.style.display === 'flex') {
+    appSettingsContainer.style.display === 'flex') {
     settingsAside.style.display = 'flex';
   } else {
     settingsAside.style.display = 'none';
@@ -1685,13 +1678,6 @@ function toggleSettingsAside() {
       } else {
    cloudSettingsButton.classList.remove('active');
       }   
-      
-       if (chatOptionsContainer.style.display === 'flex') {
-   chatOptionsButton.classList.add('active');
-   options.loadOptions();
-  }else {
-     chatOptionsButton.classList.remove('active');
-  }
   
      if (llmSettingsContainer.style.display === 'flex') {
      llmSettingsButton.classList.add('active'); 
