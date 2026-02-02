@@ -915,87 +915,16 @@ function replaceCharEncodings(text) {
  * Minimal sanitizer for textContent insertion.
  * Removes control chars + risky punctuation.
  */
+/**
+ * Minimal sanitizer for textContent insertion.
+ * Allows all code characters (< > { } ` etc.)
+ * Removes only control characters that break rendering.
+ */
 function sanitizeText(s) {
-  if (typeof input !== 'string') return '';
-
-  // Normalize to NFC to avoid weird combining sequences
-  try { input = input.normalize('NFC'); } catch (e) { /* ignore if not supported */ }
-
-  // Remove BOM and explicit bidi / isolate / format characters that can be abused
-  input = input.replace(/[\uFEFF\u202A-\u202E\u2066-\u2069\u200B\u200C\u200D\u2060\u180E]/g, '');
-
-  // Remove Unicode noncharacters U+FDD0..U+FDEF and BMP noncharacters U+FFFE/U+FFFF
-  input = input.replace(/[\uFDD0-\uFDEF\uFFFE\uFFFF]/g, '');
-
-  // Remove other control characters except \n \r \t (0x09,0x0A,0x0D)
-  // We'll use a negative approach below to remove anything not allowed.
-
-  // If environment supports Unicode property escapes, use a single inverse replace:
-  try {
-    // Allowed: \p{L}\p{N}\p{P}\p{S}\p{M}\p{Zs} plus \n \r \t
-    const disallowed = /[^\p{L}\p{N}\p{P}\p{S}\p{M}\p{Zs}\n\r\t]/gu;
-    input = input.replace(disallowed, '');
-    // Collapse repeated newlines/tabs to reasonable amounts
-    input = input.replace(/\r\n|\r/g, '\n');
-    input = input.replace(/\t{2,}/g, '\t');
-    input = input.replace(/\n{3,}/g, '\n\n');
-    return input;
-  } catch (e) {
-    // Fallback for older browsers without \p{} support
-  }
-
-  // Fallback approach: keep printable ASCII, common Latin-1, whitespace, and surrogate pairs (emoji)
-  // Keep: 0x20-0x7E (printable ASCII), 0xA0-0xFF (Latin-1 supplement), newline, CR, tab
-  // Also preserve surrogate pairs (high surrogate 0xD800–0xDBFF followed by low surrogate 0xDC00–0xDFFF)
-  // and common punctuation beyond ASCII by allowing U+2000–U+2FFF block ranges conservatively.
-  // This fallback is intentionally permissive for common use-cases (emoji, code, markdown).
-  const fallback = [];
-  for (let i = 0; i < input.length; i++) {
-    const code = input.charCodeAt(i);
-
-    // surrogate pair handling: if high surrogate and next is low surrogate, keep both
-    if (code >= 0xD800 && code <= 0xDBFF && i + 1 < input.length) {
-      const next = input.charCodeAt(i + 1);
-      if (next >= 0xDC00 && next <= 0xDFFF) {
-        fallback.push(input[i], input[i + 1]);
-        i++; // skip low surrogate
-        continue;
-      }
-    }
-
-    // Allow printable ASCII
-    if (code >= 0x20 && code <= 0x7E) {
-      fallback.push(input[i]);
-      continue;
-    }
-
-    // Allow common Latin-1 supplement
-    if (code >= 0xA0 && code <= 0xFF) {
-      fallback.push(input[i]);
-      continue;
-    }
-
-    // Allow whitespace: newline, CR, tab
-    if (code === 0x0A || code === 0x0D || code === 0x09) {
-      fallback.push(input[i]);
-      continue;
-    }
-
-    // Allow many punctuation/symbol ranges (conservative)
-    if ((code >= 0x2000 && code <= 0x2FFF) || (code >= 0x3000 && code <= 0x303F)) {
-      fallback.push(input[i]);
-      continue;
-    }
-
-    // Otherwise drop the character (control, private-use, noncharacter, etc.)
-  }
-
-  let out = fallback.join('');
-  out = out.replace(/\r\n|\r/g, '\n');
-  out = out.replace(/\t{2,}/g, '\t');
-  out = out.replace(/\n{3,}/g, '\n\n');
-  return out;
+  if (typeof s !== 'string') return '';
+  return s.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
 }
+
 
 /**
  * Extracts content from a JSON fragment.
