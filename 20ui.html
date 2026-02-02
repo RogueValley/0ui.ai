@@ -803,40 +803,47 @@ class StreamingJsonProcessor {
 
 
 
-
-
 /**
- * Fallback safe JSON parse (reviver strips dangerous keys).
- * Uses imported secureParse when available.
- *
- * @param {string} text
- * @returns {object|null}
+ * Fallback safe JSON parse.
+ * - Never throws
+ * - Rejects incomplete JSON
+ * - Strips dangerous keys
+ * - Uses secureParse() if available
  */
 function safeJsonParse(text) {
-  if (typeof text !== 'string') return null;
-  if (secureParse) {
-    try { return secureParse(text); } catch (e) { /* fall through to local */ }
+  if (typeof text !== 'string' || text.trim() === '') return null;
+
+  // Try secure parser first
+  if (typeof secureParse === 'function') {
+    try {
+      const out = secureParse(text);
+      if (out !== undefined) return out;
+    } catch {
+      // fall through to local parser
+    }
   }
+
+  // Local safe fallback
   try {
     return JSON.parse(text, (k, v) => {
       if (k === '__proto__' || k === 'constructor' || k === 'prototype') return undefined;
       if (typeof v === 'function') return undefined;
       return v;
     });
-  } catch (e) {
+  } catch {
+    // Incomplete or invalid JSON
     return null;
   }
 }
 
+
 /**
- * Decode only the explicit escape sequences expected from the LLM stream.
- * Keeps decoding conservative to avoid turning text into HTML.
- *
- * @param {string} text
- * @returns {string}
+ * Decode only the escape sequences expected from LLM streams.
+ * Conservative by design.
  */
 function replaceCharEncodings(text) {
   if (typeof text !== 'string') return '';
+
   const map = {
     '\\&#10;': '\n',
     '\\&#13;': '\r',
@@ -845,44 +852,43 @@ function replaceCharEncodings(text) {
     '\\u0026': '&',
     '\\u0027': "'"
   };
+
   return text.replace(/\\u[0-9a-fA-F]{4}|\\&#10;|\\&#13;/g, m => {
     if (m.startsWith('\\u')) {
       const hex = m.slice(2);
-      if (/^[0-9a-fA-F]{4}$/.test(hex)) return String.fromCharCode(parseInt(hex, 16));
-      return m;
+      return /^[0-9a-fA-F]{4}$/.test(hex)
+        ? String.fromCharCode(parseInt(hex, 16))
+        : m;
     }
     return map[m] || m;
   });
 }
 
+
 /**
  * Minimal sanitizer for textContent insertion.
- * Removes control chars and a few risky punctuation characters.
- *
- * @param {string} s
- * @returns {string}
+ * Removes control chars + risky punctuation.
  */
 function sanitizeText(s) {
   if (typeof s !== 'string') return '';
   return s.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F`{}<>]/g, '');
 }
 
+
 /**
- * Safe extractor: parse JSON fragment and return the content string (decoded + sanitized).
- * Accepts JSON string or object. Returns null if no valid content found.
- *
- * Expected shapes:
- *  - {"content":"..."}
- *  - {"delta":{"content":"..."}}
- *
- * @param {string|object} fragment
- * @returns {string|null}
+ * Extracts content from a JSON fragment.
+ * Accepts:
+ *   - {"content":"..."}
+ *   - {"delta":{"content":"..."}}
+ * Returns decoded + sanitized text.
  */
 function extractContent(fragment) {
   let obj = fragment;
+
+  // Parse if string
   if (typeof fragment === 'string') {
     obj = safeJsonParse(fragment);
-    if (!obj) return null;
+    if (!obj || typeof obj !== 'object') return null;
   }
 
   const content =
@@ -895,7 +901,6 @@ function extractContent(fragment) {
   const decoded = replaceCharEncodings(content);
   return sanitizeText(decoded);
 }
-
 
 
 
