@@ -457,8 +457,34 @@ footer {
 </body>
 <!-- remove the other module tag or combine files -->
 <script type="module">
+// Unified secure JSON parser reference
+let secureParse = null;
 
- import { secureJsonParse } from './secure-json-parse.js';
+try {
+  // If your module uses default export
+  import('./secure-json-parse.js').then(mod => {
+    secureParse = mod.default || mod.secureJsonParse || null;
+  });
+} catch (e) {
+  console.warn("secure-json-parse module failed to load:", e);
+}
+
+// Fallback if module fails or loads late
+function ensureSecureParse() {
+  if (secureParse) return secureParse;
+
+  // Safe fallback
+  return function fallbackSafeParse(str) {
+    try {
+      return JSON.parse(str);
+    } catch {
+      return null;
+    }
+  };
+}
+
+
+
 
 
 
