@@ -374,6 +374,8 @@ footer {
 <!-- remove the other module tag or combine files -->
 <script type="module">
 
+ 
+
 
 
 // DOM references
@@ -880,10 +882,6 @@ const cloudSettingsButton = document.getElementById('cloud-settings-button');
 const cloudSettingsButtonClose = document.getElementById('cloud-settings-button-close');
 const cloudSettingsContainer = document.getElementById('cloud-settings-container');
 
-const chatOptionsButton = document.getElementById('chat-options-button');
-const chatOptionsButtonClose = document.getElementById('chat-options-button-close');
-const chatOptionsSaveButton = document.getElementById('chat-options-save-button');
-
 const appSettingsButton = document.getElementById('app-settings-button');
 const appSettingsButtonClose = document.getElementById('app-settings-button-close');
 const appSettingsContainer = document.getElementById('app-settings-container');
@@ -925,86 +923,127 @@ let savedModelSelected = localStorage.getItem('modelSelected');
 
 
 
-
-
-
-
-
-const options = new Options();
-const currentOptions = options.getOptions();
-
-
-
-const settingsAside = document.querySelector('.settings-panel');
-let isSending = false;
-
-
-let SendOnEnter = true;
-
-
-let systemPrompt = savedSystempPrompt;
-
-
-loadLayout();
-
-/**
- * Persist options to localStorage safely.
- * - Validates input
- * - Removes common secret keys
- * - Removes functions/undefined values
- * - Enforces a size limit
- *
- * @param {object} options - Plain object of options to save
- * @param {object} [opts] - Optional settings: { key: 'options', maxBytes: 100000 }
- * @returns {boolean} true on success, false on failure
- */
-function saveOptions(options, opts = {}) {
-  const storageKey = opts.key || 'options';
-  const maxBytes = typeof opts.maxBytes === 'number' ? opts.maxBytes : 100_000;
-
-  if (!options || typeof options !== 'object' || Array.isArray(options)) {
-    console.warn('saveOptions: expected plain object');
-    return false;
+class Options {
+  constructor() {
+    this.storageKey = 'options';
+    this._options = this._loadFromStorage();
   }
 
-  // Shallow copy to avoid mutating caller object
-  const copy = { ...options };
-
-  // Remove common sensitive keys if present
-  const sensitive = ['apiKey', 'apiSecret', 'clientSecret', 'password', 'token', 'accessToken'];
-  for (const k of sensitive) {
-    if (k in copy) delete copy[k];
+  _loadFromStorage() {
+    try {
+      const raw = localStorage.getItem(this.storageKey);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      return (parsed && typeof parsed === 'object') ? parsed : {};
+    } catch {
+      return {};
+    }
   }
 
-  // Replacer to drop functions and undefined
-  const replacer = (key, value) => {
-    if (typeof value === 'function' || typeof value === 'undefined') return undefined;
-    return value;
-  };
+  getOptions() {
+    return { ...this._options };
+  }
 
-  try {
-    const json = JSON.stringify(copy, replacer);
+  loadOptions() {
+    this._options = this._loadFromStorage();
+    return this.getOptions();
+  }
 
-    // Size guard
-    if (new Blob([json]).size > maxBytes) {
-      console.warn('saveOptions: payload too large to store');
-      return false;
+  saveOptions(opts) {
+    if (!opts || typeof opts !== 'object') return false;
+
+    // sanitize + secure save
+    const safe = this._sanitize(opts);
+    if (!safe) return false;
+
+    this._options = safe;
+    localStorage.setItem(this.storageKey, JSON.stringify(safe));
+    return true;
+  }
+
+  _sanitize(opts) {
+    const sensitive = [
+      'apiKey', 'apiSecret', 'clientSecret',
+      'password', 'token', 'accessToken'
+    ];
+
+    const copy = { ...opts };
+    for (const k of sensitive) {
+      if (k in copy) delete copy[k];
     }
 
-    localStorage.setItem(storageKey, json);
-    return true;
-  } catch (e) {
-    console.error('saveOptions: failed to serialize or store options', e);
-    return false;
+    const replacer = (key, value) =>
+      typeof value === 'function' || typeof value === 'undefined'
+        ? undefined
+        : value;
+
+    try {
+      const json = JSON.stringify(copy, replacer);
+
+      if (new Blob([json]).size > 100_000) {
+        console.warn('Options: payload too large');
+        return null;
+      }
+
+      return JSON.parse(json);
+    } catch (e) {
+      console.error('Options: sanitize failed', e);
+      return null;
+    }
   }
 }
+
+function saveSystemPrompt() {
+  // Pull the latest value from the UI
+  const value = syspromptInput.value;
+
+  // Update the in‑memory system prompt
+  systemPrompt = value;
+
+  // Persist to localStorage
+  localStorage.setItem('system-prompt', value);
+
+  // Reset connection so the next request uses the new prompt
+  resetConnection();
+}
+
+
+// ------------------------------
+// GLOBAL STATE INITIALIZATION
+// ------------------------------
+
+// Options manager
+const options = new Options();
+
+// Always fetch fresh options when needed
+function getCurrentOptions() {
+  return options.getOptions();
+}
+
+// Cached DOM references
+const settingsAside = document.querySelector('.settings-panel');
+
+// Message‑send state
+let isSending = false;
+
+// Input behavior
+let SendOnEnter = true;
+
+// System prompt (safe fallback)
+let systemPrompt = typeof savedSystempPrompt === 'string'
+  ? savedSystempPrompt
+  : '';
+
+// Load layout settings early
+loadLayout();
+
+
 
 
 document.addEventListener('DOMContentLoaded', () => {
 
-
+  // Initial UI adjustments
   setTimeout(() => requestAnimationFrame(guiSizeChange), 100);
-
   options.loadOptions();
   messageInput.focus();
   resize_textbox();
@@ -1027,11 +1066,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (savedDarkMode === 'true') body.classList.add('dark-mode');
 
-  /* ------------------------------
-     SETTINGS PANEL TOGGLES
-  --------------------------------*/
+  // ------------------------------
+  // SETTINGS PANEL TOGGLES
+  // ------------------------------
   const toggleDisplay = el =>
-    el.style.display = (el.style.display === 'none' || !el.style.display) ? 'flex' : 'none';
+    el.style.display = (el.style.display === 'none' || !el.style.display)
+      ? 'flex'
+      : 'none';
 
   cloudSettingsButton.addEventListener('click', () => {
     toggleDisplay(cloudSettingsContainer);
@@ -1042,10 +1083,6 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleDisplay(cloudSettingsContainer);
     toggleSettingsAside();
   });
-
-  chatOptionsSaveButton.addEventListener('click', () =>
-    options.saveOptions(options.getOptions())
-  );
 
   appSettingsButton.addEventListener('click', () => {
     toggleDisplay(appSettingsContainer);
@@ -1075,9 +1112,10 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleSettingsAside();
   });
 
-  /* ------------------------------
-     WINDOW EVENTS
-  --------------------------------*/
+
+  // ------------------------------
+  // WINDOW EVENTS
+  // ------------------------------
   window.addEventListener('resize', guiSizeChange);
   window.addEventListener('orientationchange', guiSizeChange);
 
@@ -1085,17 +1123,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.shiftKey || e.ctrlKey) resize_textbox();
   });
 
-  /* ------------------------------
-     MODEL SELECT
-  --------------------------------*/
+  // ------------------------------
+  // MODEL SELECT
+  // ------------------------------
   modelsSelectDropdown.addEventListener('change', e => {
     savedModelSelected = e.target.value;
     localStorage.setItem('modelSelected', savedModelSelected);
   });
 
-  /* ------------------------------
-     MESSAGE INPUT
-  --------------------------------*/
+  // ------------------------------
+  // MESSAGE INPUT
+  // ------------------------------
   appSaveSysPromptButton.addEventListener('click', saveSystemPrompt);
   sendButton.addEventListener('click', runSend);
   saveSettingsButton.addEventListener('click', saveSettings);
@@ -1130,23 +1168,40 @@ document.addEventListener('DOMContentLoaded', () => {
   loadActiveModels();
 });
 
-/* ------------------------------
-   TEXTBOX RESIZE
---------------------------------*/
+
+
+
+function URLadd(path, baseurl) {
+  if (baseurl.endsWith('/')) {
+    return baseurl + path.replace(/^\/+/, '');
+  } else {
+    return baseurl + '/' + path.replace(/^\/+/, '');
+  }
+}
+
+
+// ------------------------------
+// TEXTBOX RESIZE
+// ------------------------------
 function resize_textbox() {
   messageInput.style.height = '0px';
-  if (textarea.classList.contains('normal')) {
+
+  if (messageInput.classList.contains('normal')) {
     messageInput.classList.add('expanded');
     messageInput.classList.remove('normal');
   }
+
   messageInput.style.height = messageInput.scrollHeight + 'px';
 }
 
-/* ------------------------------
-   SEND MESSAGE
---------------------------------*/
+
+// ------------------------------
+// SEND MESSAGE FLOW
+// ------------------------------
 function runSend() {
-  if (!isSending) doSendMessage();
+  if (!isSending) {
+    doSendMessage();
+  }
 }
 
 async function doSendMessage() {
@@ -1157,14 +1212,16 @@ async function doSendMessage() {
 
     await sendMessage();
 
-    if (!textarea.classList.contains('normal')) {
+    if (!messageInput.classList.contains('normal')) {
       messageInput.classList.add('normal');
       messageInput.classList.remove('expanded');
     }
 
     messageInput.value = "";
-  } catch (err) {
-    console.error('Error sending message:', err);
+    resize_textbox();
+
+  } catch (error) {
+    console.error('Error sending message:', error);
   } finally {
     DoneSend();
   }
@@ -1176,9 +1233,10 @@ function DoneSend() {
   hideLoading();
 }
 
-/* ------------------------------
-   LOADING INDICATORS
---------------------------------*/
+
+// ------------------------------
+// LOADING INDICATORS
+// ------------------------------
 function showLoading() {
   loadingIndicator.style.display = 'flex';
 }
@@ -1187,29 +1245,26 @@ function hideLoading() {
   loadingIndicator.style.display = 'none';
 }
 
-/* ------------------------------
-   SAVE SETTINGS
---------------------------------*/
+
+// ------------------------------
+// SAVE SETTINGS
+// ------------------------------
 function saveSettings() {
   localStorage.setItem('apiUrl', apiUrlInput.value);
   localStorage.setItem('clientId', clientIdInput.value);
   localStorage.setItem('clientSecret', clientSecretInput.value);
   localStorage.setItem('clientStream', !clientStreamInput.checked);
 
-  options.saveOptions(currentOptions);
+  options.saveOptions(getCurrentOptions());
 
   systemPrompt = syspromptInput.value;
   resetConnection();
 }
 
-function saveSystemPrompt() {
-  systemPrompt = syspromptInput.value;
-  localStorage.setItem('system-prompt', systemPrompt);
-}
 
-/* ------------------------------
-   SETTINGS ASIDE STATE
---------------------------------*/
+// ------------------------------
+// SETTINGS PANEL STATE
+// ------------------------------
 function toggleSettingsAside() {
   const anyOpen =
     cloudSettingsContainer.style.display === 'flex' ||
@@ -1218,10 +1273,24 @@ function toggleSettingsAside() {
 
   settingsAside.style.display = anyOpen ? 'flex' : 'none';
 
-  cloudSettingsButton.classList.toggle('active', cloudSettingsContainer.style.display === 'flex');
-  llmSettingsButton.classList.toggle('active', llmSettingsContainer.style.display === 'flex');
-  appSettingsButton.classList.toggle('active', appSettingsContainer.style.display === 'flex');
+  cloudSettingsButton.classList.toggle(
+    'active',
+    cloudSettingsContainer.style.display === 'flex'
+  );
+
+  llmSettingsButton.classList.toggle(
+    'active',
+    llmSettingsContainer.style.display === 'flex'
+  );
+
+  appSettingsButton.classList.toggle(
+    'active',
+    appSettingsContainer.style.display === 'flex'
+  );
 }
+
+
+
 
 </script>
 </html>
