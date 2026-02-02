@@ -365,29 +365,61 @@ footer {
 }
 
 
-.chat-body-container {
-  position: relative;
-}
 
+.chat-body-container {
+  position: relative; /* required so bubble anchors to chat area */
+}
 
 /* Thinking bubble overlay */
 .thinking-bubble {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  max-width: 260px;
+  top: 12px;
+  right: 12px;
+  max-width: 320px;
   padding: 10px 14px;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(0, 0, 0, 0.80);
   color: #fff;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 14px;
   line-height: 1.4;
-  display: none; /* hidden by default */
+  display: none;
   z-index: 9999;
   pointer-events: none;
   backdrop-filter: blur(4px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  animation: thinkingFadeIn 0.15s ease-out;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  transform-origin: top right;
+  transition: opacity 160ms ease, transform 160ms ease;
+  opacity: 0;
+  transform: translateY(-6px) scale(0.99);
+}
+
+/* Visible state */
+.thinking-bubble.visible {
+  display: block;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* Title and text */
+.thinking-title {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+.thinking-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
+  font-size: 13px;
+  opacity: 0.95;
+}
+
+/* Optional: limit height and allow scrolling for long thinking output */
+.thinking-bubble .thinking-text {
+  max-height: 160px;
+  overflow: auto;
+  padding-right: 6px;
 }
 
 /* Optional subtle fade-in */
