@@ -366,67 +366,37 @@ footer {
 
 
 
-.chat-body-container {
-  position: relative; /* required so bubble anchors to chat area */
-}
+.chat-body-container { position: relative; }
 
 /* Thinking bubble overlay */
 .thinking-bubble {
   position: absolute;
   top: 12px;
   right: 12px;
-  max-width: 320px;
+  max-width: 360px;
   padding: 10px 14px;
-  background: rgba(0, 0, 0, 0.80);
+  background: rgba(0,0,0,0.80);
   color: #fff;
   border-radius: 12px;
   font-size: 14px;
   line-height: 1.4;
   display: none;
-  z-index: 9999;
+  z-index: 1200;
   pointer-events: none;
   backdrop-filter: blur(4px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.35);
   transform-origin: top right;
   transition: opacity 160ms ease, transform 160ms ease;
   opacity: 0;
   transform: translateY(-6px) scale(0.99);
 }
-
-/* Visible state */
 .thinking-bubble.visible {
   display: block;
   opacity: 1;
   transform: translateY(0) scale(1);
 }
-
-/* Title and text */
-.thinking-title {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 6px;
-  font-size: 13px;
-}
-.thinking-text {
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
-  font-size: 13px;
-  opacity: 0.95;
-}
-
-/* Optional: limit height and allow scrolling for long thinking output */
-.thinking-bubble .thinking-text {
-  max-height: 160px;
-  overflow: auto;
-  padding-right: 6px;
-}
-
-/* Optional subtle fade-in */
-@keyframes thinkingFadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+.thinking-title { display:block; font-weight:600; margin-bottom:6px; font-size:13px; }
+.thinking-text { white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, monospace; font-size:13px; max-height:160px; overflow:auto; padding-right:6px; }
 
 
 
@@ -453,12 +423,12 @@ footer {
 <div class="chat-body-container" id="chat-body-container">
   <div class="chat-body" id="chat-body"></div>
 
-  <div id="thinking-bubble" class="thinking-bubble" aria-hidden="true">
+  <!-- Thinking bubble (must exist once) -->
+  <div id="thinking-bubble" class="thinking-bubble" aria-hidden="true" role="status" aria-live="polite">
     <strong class="thinking-title">Thinking…</strong>
-    <div id="thinking-bubble-text" class="thinking-text" aria-live="polite"></div>
+    <div id="thinking-bubble-text" class="thinking-text"></div>
   </div>
 </div>
-
 
 
 
@@ -537,71 +507,6 @@ footer {
 </body>
 <!-- remove the other module tag or combine files -->
 <script type="module">
-
-function showThinkingBubble(text) {
-  const bubble = document.getElementById('thinking-bubble');
-  const txt = document.getElementById('thinking-bubble-text');
-
-  txt.textContent = text || "";
-  bubble.style.display = 'block';
-}
-
-function hideThinkingBubble() {
-  const bubble = document.getElementById('thinking-bubble');
-  bubble.style.display = 'none';
-}
-
-function detectThinking(obj) {
-  const msg = obj.message || {};
-
-  if (typeof msg.thinking === "string" && msg.thinking.trim() !== "") {
-    return { state: "THINKING", text: msg.thinking };
-  }
-
-  if (typeof msg.content === "string" && msg.content.trim() !== "") {
-    return { state: "DONE_THINKING" };
-  }
-
-  return null;
-}
-
-function handleStreamChunk(jsonString) {
-  const obj = safeJsonParse(jsonString);
-  if (!obj) return;
-
-  const thinking = detectThinking(obj);
-
-  // --- THINKING MODE ---
-  if (thinking && thinking.state === "THINKING") {
-    showThinkingBubble(thinking.text);
-    return; // do NOT output to chat yet
-  }
-
-  // --- DONE THINKING ---
-  if (thinking && thinking.state === "DONE_THINKING") {
-    hideThinkingBubble();
-    // continue to extract content normally
-  }
-
-  // --- NORMAL CONTENT ---
-  const text = extractContent(obj);
-  if (!text) return;
-
-  appendAssistantText(text); // your existing bubble renderer
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1735,5 +1640,113 @@ function toggleSettingsAside() {
 })();
 
 
+
+
+// Buffer for concatenated/partial JSON
+
+// Buffer for concatenated/partial JSON
+let streamBuffer = '';
+
+function extractJsonObjectsFromBuffer() {
+  const results = [];
+  let depth = 0, start = -1;
+  for (let i = 0; i < streamBuffer.length; i++) {
+    const ch = streamBuffer[i];
+    if (ch === '{') { if (start === -1) start = i; depth++; }
+    else if (ch === '}') {
+      depth = Math.max(0, depth - 1);
+      if (depth === 0 && start !== -1) { results.push(streamBuffer.slice(start, i + 1)); start = -1; }
+    }
+  }
+  if (results.length) {
+    const last = results[results.length - 1];
+    const lastIndex = streamBuffer.indexOf(last) + last.length;
+    streamBuffer = streamBuffer.slice(lastIndex);
+  }
+  return results;
+}
+
+/* Bubble helpers */
+function showThinkingBubble(text) {
+  const bubble = document.getElementById('thinking-bubble');
+  const txt = document.getElementById('thinking-bubble-text');
+  if (!bubble || !txt) return;
+  txt.textContent = text || '';
+  bubble.classList.add('visible');
+  bubble.setAttribute('aria-hidden', 'false');
+}
+function updateThinkingBubble(text) {
+  const txt = document.getElementById('thinking-bubble-text');
+  if (!txt) return;
+  txt.textContent = (txt.textContent || '') + text;
+}
+function hideThinkingBubble() {
+  const bubble = document.getElementById('thinking-bubble');
+  if (!bubble) return;
+  bubble.classList.remove('visible');
+  bubble.setAttribute('aria-hidden', 'true');
+}
+
+/* Detect thinking vs content */
+function detectThinkingState(obj) {
+  const msg = obj && obj.message ? obj.message : null;
+  if (msg && typeof msg.thinking === 'string' && msg.thinking !== '') return { state: 'THINKING', text: msg.thinking };
+  if (msg && typeof msg.content === 'string' && msg.content !== '') return { state: 'DONE_THINKING' };
+  if (typeof obj.response === 'string' && obj.response !== '') return { state: 'DONE_THINKING' };
+  return null;
+}
+
+
+/* Append assistant text to chat (replace with your renderer) */
+function appendAssistantText(text) {
+  const chat = document.getElementById('chat-body');
+  if (!chat) return;
+  const el = document.createElement('div');
+  el.className = 'ai-bubble';
+  el.textContent = text;
+  chat.appendChild(el);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+/* Main per-chunk handler: call this for each raw chunk from your stream */
+function handleRawStreamChunk(rawChunk) {
+  streamBuffer += rawChunk;
+  const jsonStrings = extractJsonObjectsFromBuffer();
+  for (const js of jsonStrings) {
+    const obj = safeJsonParse(js);
+    if (!obj) continue;
+    const status = detectThinkingState(obj);
+    if (status && status.state === 'THINKING') {
+      const txtEl = document.getElementById('thinking-bubble-text');
+      if (!txtEl || txtEl.textContent === '') showThinkingBubble(status.text);
+      else updateThinkingBubble(status.text);
+      continue;
+    }
+    if (status && status.state === 'DONE_THINKING') hideThinkingBubble();
+    const text = extractContent(obj);
+    if (text) appendAssistantText(text);
+  }
+}
+
+/* Optional: quick test (remove in production) */
+// setTimeout(() => {
+//   const chunks = ['{"message":{"thinking":"We"}}','{"message":{"thinking":" need"}}','{"message":{"thinking":" to"}}','{"message":{"thinking":" respond"}}','{"message":{"content":"Hello world!"}}'];
+//   let i=0; const t=setInterval(()=>{ handleRawStreamChunk(chunks[i]); i++; if(i>=chunks.length) clearInterval(t); },150);
+// }, 300);
+
+
+
 </script>
+
+
+
+
+
+
+
+
+
+
+
+
 </html>
