@@ -6,280 +6,364 @@
     <title>Rogue LLM Chat</title>
     <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
 </head>
-
 <style>
-/* RESET */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
-
-html, body {
+html {
   height: 100%;
 }
-
 body {
   font-family: Arial, sans-serif;
   line-height: 1.6;
   color: #333;
-  background: #f9f9f9;
+  background-color: #f9f9f9;
   font-size: 16px;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
+  height: 100vh; 
+  width: 100vw; 
+  margin: 0; 
+
+  top: 0;
+  left: 0;
+  min-height: 100vh;
+  max-height: 100vh;
 }
 
-/* UTILITY CLASSES */
-.rounded { border-radius: 10px; }
-.text-wrap {
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-}
-.flex { display: flex; }
-.center { justify-content: center; align-items: center; }
-
-/* NAV BAR */
 .nav-bar {
   position: fixed;
   top: 0;
-  height: 4dvh;
-  width: 100dvw;
+  height: 4dvh; 
   display: flex;
-  justify-content: flex-end;
-  background: #444;
+  justify-content: space-between;
+  background-color: #444;
   color: #ddd;
   padding-top: .5dvh;
+  justify-content: flex-end;
+  width: 100dvw;
 }
 
 .nav-bar-button {
+  padding-right: 2dvh;
   padding: .5dvh;
-  margin-right: 2dvw;
   border: .2dvh solid #ccc;
   border-radius: 2dvh;
-  background: #408000;
+  background-color: #408000;
+  width: fit-content; /* Added to size the container to its content horizontally */
+  height: fit-content; /* Added to size the container to its content vertically */
+
+  margin-right: 2dvw;
   font-size: 1.5dvh;
+
   font-weight: bold;
   cursor: pointer;
 }
+
 .nav-bar-button:hover {
-  background: #222;
-  color: #ddd;
+  background-color: #222; /* Change background color on hover */
+  color: #ddd; /* or color: white; */
 }
 
-/* LOGO */
+
 .app-logo {
   margin-right: auto;
-  padding: 0 .5dvh 0 1dvh;
   font-size: 2dvh;
-  font-weight: bold;
-  font-family: 'Arial Black', sans-serif;
-  color: #00dd00;
-  background: #333;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  text-shadow: 0 0 10px rgba(0,200,0,.5);
-  box-shadow: 0 0 20px rgba(0,0,0,.5);
-}
-.app-logo::before {
-  content: "";
-  background: url('Rogue_icon.png') center/contain no-repeat;
-  width: 3dvh;
-  height: 3dvh;
-  margin-right: 1dvh;
+  padding-left:  .5dvh;
+  padding-right: 1dvh;
+  color: #00dd00; /* neon green */
+  text-shadow: 0 0 10px rgba(0, 200, 0, 0.5); /* glow effect */
+  font-weight: bold; /* bold font */
+  font-family: 'Arial Black', sans-serif; /* modern font */
+ background-color: #333; /* dark gray background */
+   border-radius: 10px; /* rounded corners */
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5); /* shadow effect */
+  width: fit-content; /* Added to size the container to its content vertically */
+  display: flex; /* Add this to use flexbox for icon and text alignment */
+  align-items: center; /* Vertically center the icon and text */
 }
 
-/* LOADING */
+.app-logo::before {
+  content: "";
+  background-image: url('Rogue_icon.png');
+  background-size: contain;
+  width: 3dvh; /* Adjust the width to fit your icon size */
+  height: 3dvh; /* Adjust the height to fit your icon size */
+  margin-right: 1dvh; /* Add some space between the icon and text */
+}
+
+
+ 
 #loading-indicator {
   position: absolute;
   top: 30vh;
   left: 50%;
   transform: translateX(-50%);
-  height: 14dvh;
-  background: #000;
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  background-color: #000000;
+  height: 14dvh;
 }
+
 #loading-indicator img {
-  width: 22dvh;
+  width: 22dvh; /* adjust the width to your liking */
   height: 22dvh;
 }
 
-/* CHAT BODY */
-.chat-body-container {
+.chat-body-container {  
   position: fixed;
   top: 4dvh;
-  width: 100%;
+  justify-content: start; /* Keep this */
+  align-items: center;
+  background-color: #444000;
+  width: 100%; /* Make it full width */
   height: 88dvh;
-  background: #444000;
+
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
   user-select: text;
   cursor: text;
-  display: flex;
-  justify-content: start;
-  align-items: center;
 }
 
 .chat-body {
-  padding: 10px 10px 1dvh;
+  padding: 10px;
+  padding-bottom: 1dvh;
   border-radius: 10px;
-  overflow-y: auto;
-  max-height: 100%;
+  overflow-y: auto; /* Allow the chat body to scroll */
+  max-height: 100%; /* Set the maximum height of the chat body to the height of the container */
+  
+
 }
 
 .chat-body pre {
+  display: block; /* Changed from flex to block */
   margin-bottom: 2dvh;
   padding: 10px;
-  border-radius: 10px;
+  border-radius: 10px;  
+
 }
 
-/* MESSAGE BUBBLES */
-.bubble {
+.user-bubble {
   display: block;
   padding: 10px;
   border-radius: 10px;
+  background-image: linear-gradient(to bottom right, #03131a, #4682B4);
+  color: #dddddd;
+  white-space: pre-wrap; /* Allows text to wrap */
+  word-wrap: break-word; /* Breaks long words */
+  overflow-wrap: break-word; /* For very long words without spaces */
   pointer-events: auto;
 }
-.user-bubble {
-  background: linear-gradient(to bottom right, #03131a, #4682B4);
-  color: #ddd;
-}
+
 .ai-bubble {
-  background: linear-gradient(to bottom right, #599216, #679468);
-  color: #000;
+  display: block;
+  padding: 10px;
+  border-radius: 10px;
+  background-image: linear-gradient(to bottom right, #599216, #679468);
+  color: #000000;
+  white-space: pre-wrap; /* Allows text to wrap */
+  word-wrap: break-word; /* Breaks long words */
+  overflow-wrap: break-word; /* For very long words without spaces */
+  pointer-events: auto;
 }
 
-/* BUTTONS */
-.button-save,
+
+.button-save {
+  font-size: 1.5dvh;
+  font-weight: bold;
+  width: 6dvh;
+  height: 5dvh;
+  margin-left: 2vw;
+  border: 0.1vw solid #ccc;
+  border-radius: 2vw;
+  background-color: #444;
+  color: #ddd;
+  cursor: pointer;
+}
+
 .button-close {
   font-size: 1.5dvh;
   font-weight: bold;
   width: 6dvh;
   height: 5dvh;
+  margin-left: 4vw;
+  border: 0.1vw solid #ff0;
   border-radius: 2vw;
+  background-color: #ff0080;
+  color: #ddd;
   cursor: pointer;
 }
-.button-save {
-  margin-left: 2vw;
-  border: .1vw solid #ccc;
-  background: #444;
-  color: #ddd;
-}
-.button-close {
-  margin-left: 4vw;
-  border: .1vw solid #ff0;
-  background: #ff0080;
-  color: #ddd;
-}
 
-/* SYSTEM PROMPT INPUT */
-#app-system-prompt-input {
+#app-system-prompt-input{
   width: 98%;
   height: 20dvh;
-  padding: .5vw;
+  padding: 0.5vw;
   font-size: .8rem;
   border: none;
   border-radius: 10px;
-  background: #ddd;
-  white-space: pre-wrap;
-  overflow-wrap: break-word;
+  background-color: #ddd;
+  white-space: pre-wrap; /* Allows text to wrap */
+  word-wrap: break-word; /* Breaks long words */
+  overflow-wrap: break-word; /* For very long words without spaces */
 }
 
-/* FOOTER */
 footer {
   position: fixed;
   bottom: 0;
+  left: 0;
+
   width: 100vw;
   height: 8vh;
-  max-height: 10vh;
-  background: #444;
-  overflow-y: auto;
-  display: flex;
+  max-height: 10vh; /* set a maximum height in pixels */
+  background-color: #444;
+  overflow-y: auto; /* add this to hide excess content if it exceeds the max height */
   align-items: center;
 }
 
-/* INPUT SECTION */
 .input-section {
+  align-items: center;
+  height: clamp(2dvh, 4dvw, 3dvh); /* changed to auto */
+  margin-left: 5vw;
   position: fixed;
   bottom: .5dvw;
   width: 85vw;
-  margin-left: 5vw;
-  padding: 1dvw;
-  background: #555;
+  padding: 1dvw; 
+  padding-right: 1dvw;
+  background-color: #555;
   border-radius: 4vw;
   display: flex;
-  align-items: center;
-  height: fit-content;
+  padding-top: 1vh;
+  padding-bottom: 1vh;  
+  height: fit-content; /* Added to size the container to its content vertically */
 }
 
 #user-input {
-  width: 90dvw;
-  min-height: 4dvh;
-  padding: 1dvh;
-  border: 1px solid #ddd;
+  width: 90dvw; /* fixed width relative to viewport */
+  height: 4dvh; /* changed to auto */
+  min-height: 4dvh; /* minimum height */
+  font-size: clamp(.1dvh, 4dvh, 4dvw); /* cap font size based on width and height */
   border-radius: 2vw;
-  font-family: Arial, sans-serif;
-  font-size: clamp(.1dvh, 4dvw, 2.5dvh);
-  resize: vertical;
-  overflow-y: hidden;
-  transition: border-color .2s, box-shadow .2s, background-color .2s;
+ 
+  padding: 1dvh; /* consistent padding relative to viewport */
+  font-size: clamp(.1dvh, 4dvw, 2.5dvh); /* cap font size based on width and height */
+  border: 1px solid #ddd; /* improved border color and width relative to viewport */
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.1); /* added subtle shadow for depth relative to viewport */
+  font-family: Arial, sans-serif; /* added font family for better typography */
+  resize: vertical; /* allow resizing vertically */
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out, background-color 0.2s ease-in-out;
+  overflow-y: hidden; /* hide scrollbar */
 }
+
+#user-input::-webkit-scrollbar {
+  display: none; /* hide scrollbar for Chrome and Safari */
+}
+
+#user-input::-moz-scrollbar {
+  display: none; /* hide scrollbar for Firefox */
+}
+
 #user-input:focus {
   outline: none;
-  border-color: #005500;
-  box-shadow: 0 0 5px rgba(0,255,0,.5);
-  background: #add8e6;
-}
-#user-input.expanded {
-  max-height: 40vh;
-  overflow-y: auto;
+  -webkit-appearance: none; /* remove default Chrome/Mac focus ring */
+  -moz-appearance: none; /* remove default Firefox focus ring */
+  border-color: #005500; /* green border */
+  box-shadow: 0 0 5px rgba(0, 255, 0, 0.5); /* green glow */
+  background-color: #add8e6; /* light blue background */
+  overflow-y: hidden; /* hide scrollbar */
 }
 
-/* SEND BUTTON */
+
+
+#user-input.normal {
+  overflow-y: hidden; 
+  max-height: clamp(2dvh, 4dvw, 3dvh); /* cap font size based on width and height */
+}
+
+#user-input.expanded {
+  max-height: 40vh; 
+  overflow-y: auto; 
+}
+
 #send-button {
-  margin-left: 1vw;
-  padding: .2vw 1vw;
-  border: 1px solid #ccc;
-  border-radius: 2vw;
   font-size: clamp(.1dvh, 4dvw, 2.5dvh);
   font-weight: bold;
+  margin-left: 1vw;
+  padding: 1vw;
+  padding-top: .2vw;
+  padding-bottom: .2vw;  
+  width: fit-content; /* Added to size the container to its content horizontally */
+  height: fit-content; /* Added to size the container to its content vertically */
+
+  border: 1px solid #ccc;
+  border-radius: 2vw;
   cursor: pointer;
 }
+
 #send-button:hover {
-  background: #222;
-  color: #ddd;
+  background-color: #222; /* Change background color on hover */
+  color: #ddd;/* or color: white; */
 }
 
-/* SETTINGS PANEL */
 #settings-panel {
   position: fixed;
+  display: none; /* changed to flex */
   top: 8vh;
-  width: 80dvw;
   height: 80dvh;
-  margin: 0 10dvw;
-  background: rgba(128,128,128,.5);
-  display: none;
-  flex-wrap: wrap;
-  justify-content: space-around;
-  align-items: flex-start;
-  gap: 10px;
+  width: 80dvw;
+  flex-wrap: wrap; /* Allow containers to wrap to a new line */
+  justify-content: space-around; /* Distribute containers horizontally */
+  align-items: flex-start; /* Align containers to the top */
+  gap: 10px; /* Add some spacing between containers */
+  margin-left: 10dvw; 
+  margin-right: 10dvw; 
+  background-color: rgba(128, 128, 128, 0.5); /* gray and semi-transparent background */
 }
+
 #settings-panel.hidden {
   z-index: -1;
 }
 
-/* COLOR CLASSES */
-.black { background: #111; }
-.green { background: #408000; }
-.yellow { background: #FF8000; }
-.red { background: #F00; }
-.active { background: #444111; }
-.hidden { display: none; }
 
-</style>
+#app-settings-container,
+#cloud-settings-container,
+#llm-settings-container,
+#chat-options-container {
+  display: flex;
+  padding: 1rem;
+  background-color: #808000;
+  border-radius: 10px;
+  margin: 0.5rem; 
+  width: fit-content; 
+  height: fit-content; 
+  font-size: .6rem;
+  flex-direction: column; 
+}
+
+
+
+.black {
+  background-color: #111111;
+}
+.green {
+  background-color: #408000;
+}
+.yellow {
+  background-color: #FF8000;
+}
+.red {
+  background-color: #FF0000;
+}
+.active {
+  background-color: #444111;
+}
+.hidden {
+  display: none;
+}</style>
+
 
 <body>
   <!-- Navigation Bar -->
