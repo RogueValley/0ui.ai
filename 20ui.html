@@ -373,10 +373,12 @@ footer {
 </body>
 <!-- remove the other module tag or combine files -->
 <script type="module">
-  import secureJsonParse from './secure-json-parse.js';
+import { secureJsonParse } from './secure-json-parse.js';
+
 
   // your code that uses secureJsonParse
   const secureParse = typeof secureJsonParse === 'function' ? secureJsonParse : null;
+
 
 
 
