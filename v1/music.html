@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Page - Song Generator</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #2f2f2f;
+            color: #fff;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin-top: 50px;
+        }
+        
+        #song-hash-input {
+            width: 100%;
+            height: 40px;
+            font-size: 18px;
+            padding: 10px;
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            background-color: #4f4f4f;
+            color: #fff;
+        }
+        
+        .debug-info {
+            background-color: #4f4f4f;
+            padding: 10px;
+            border: 1px solid #ccc;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Debug Page - Song Generator</h1>
+        <!-- Section 1: Start song generation -->
+        <h2>Section 1: Start Song Generation</h2>
+        <button type="submit" class="btn btn-primary" id="start-button">Start Song Generation</button>
+        <label for="song-style" style="margin-top: 20px;">Song Style:</label>
+        <input type="text" id="song-style" value="Medlodic Soft Female Tech Magic">
+        <br>
+        <label for="song-lyric" style="margin-top: 10px;">Song Lyric:</label>
+        <textarea id="song-lyric" rows="4" cols="50">hello world. this. is. the AI revolution.</textarea>
+        <br>
+        <label for="song-seed" style="margin-top: 10px;">Song Seed:</label>
+        <input type="text" id="song-seed" value="158">
+        <br>
+        <label for="song-seconds" style="margin-top: 10px;">Song Seconds:</label>
+        <input type="text" id="song-seconds" value="12">
+        <br>
+        <label for="workflow-id" style="margin-top: 10px;">Workflow ID:</label>
+        <input type="text" id="workflow-id" value="64144464">
+        <br>
+        <label for="song-hash-input" style="margin-top: 20px;">Song Hash:</label>
+        <input type="text" id="song-hash-input" placeholder="Hash will be generated here">
+        <button type="submit" class="btn btn-primary" id="get-button" style="display: none; margin-top: 20px;">Get Song</button>
+        <audio id="song-player" controls style="display: none; margin-top: 20px;">
+            Your browser does not support the audio element.
+        </audio>
+        
+        <!-- Section 2: Check song status -->
+        <h2>Section 2: Check Song Status</h2>
+        <label for="hash-input" style="margin-top: 20px;">Hash:</label>
+        <input type="text" id="hash-input">
+        <button type="submit" class="btn btn-primary" id="check-button">Check Status</button>
+        <div id="active-song" style="display: none;">
+            <h1>Active Song:</h1>
+            <p id="hash-output"></p>
+            <audio id="music-player" controls></audio>
+            <button type="submit" class="btn btn-primary" id="download-button">Download Music</button>
+            <button type="submit" class="btn btn-primary" id="play-button">Play Music</button>
+        </div>
+        
+        <!-- Section 3: Debug info -->
+        <div class="debug-info">
+            <h2>Settings:</h2>
+            <p id="start-settings"></p>
+            <h2>URLs:</h2>
+            <p id="start-url"></p>
+            <p id="get-url"></p>
+            <h2>Results:</h2>
+            <p id="start-result"></p>
+            <p id="get-result"></p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            let songHash = '';
+
+            // Start song generation button event listener
+            $('#start-button').click(function(e) {
+                e.preventDefault();
+                const songStyle = $('#song-style').val();
+                const songLyric = $('#song-lyric').val();
+                const songSeed = $('#song-seed').val();
+                const songSeconds = $('#song-seconds').val();
+                const workflowId = $('#workflow-id').val();
+                const settings = { "songStyle": songStyle, "songLyric": songLyric, "songSeed": songSeed, "songSeconds": songSeconds, "workflowId": workflowId };
+                const url = 'https://nex.ainetguard.com/api/music/start';
+                
+                $('#start-settings').text('Settings: ' + JSON.stringify(settings));
+                $('#start-url').text('URL: ' + url);
+                
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    data: JSON.stringify(settings),
+                    success: function(data, status, jqXHR) {
+                        songHash = data.replace(/"/g, ''); // Remove double quotes from the hash value
+                        $('#song-hash-input').val(songHash);
+                        $('#hash-input').val(songHash); // Update the hash input field in Section 2
+                        $('#get-button').show();
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(error);
+                        alert('Error starting song generation');
+                        $('#start-result').text('Result: Error');
+                    }
+                });
+            });
+
+            // Get song button event listener
+            $('#get-button').click(function(e) {
+                e.preventDefault();
+                const hash = $('#song-hash-input').val();
+                const settings = { "hash": hash };
+                const url = 'https://nex.ainetguard.com/api/music/get';
+                
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    data: JSON.stringify(settings),
+                    xhrFields: {
+                        responseType: 'blob'
+                    },
+                    success: function(data, status, jqXHR) {
+                        const blob = new Blob([data], { type: 'audio/mp3' });
+                        const url = URL.createObjectURL(blob);
+                        document.getElementById('song-player').src = url;
+                        document.getElementById('song-player').style.display = 'block';
+                        $('#get-url').text('URL: ' + url);
+                        $('#get-result').text('Result: Success');
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(error);
+                        alert('Error getting song');
+                        $('#get-result').text('Result: Error');
+                    }
+                });
+            });
+
+            // Check song status button event listener
+            $('#check-button').click(function(e) {
+                e.preventDefault();
+                const hash = $('#hash-input').val();
+                const settings = { "hash": hash };
+                const url = 'https://nex.ainetguard.com/api/music/check';
+                
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    data: JSON.stringify(settings),
+                    success: function(data, status, jqXHR) {
+                        const result = JSON.parse(data);
+                        if (result.status === 'ready') {
+                            $('#active-song').show();
+                            $('#hash-output').text('Hash: ' + hash);
+                            $.ajax({
+                                type: 'POST',
+                                url: 'https://nex.ainetguard.com/api/music/get',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                data: JSON.stringify(settings),
+                                xhrFields: {
+                                    responseType: 'blob'
+                                },
+                                success: function(data, status, jqXHR) {
+                                    const blob = new Blob([data], { type: 'audio/mp3' });
+                                    const url = URL.createObjectURL(blob);
+                                    document.getElementById('music-player').src = url;
+                                },
+                                error: function(xhr, status, error) {
+                                    console.error(error);
+                                    alert('Error getting song');
+                                }
+                            });
+                        } else {
+                            alert('Song is not ready yet.');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(error);
+                        alert('Error checking song status');
+                    }
+                });
+            });
+
+            // Download music button event listener
+            $('#download-button').click(function(e) {
+                e.preventDefault();
+                const hash = $('#hash-input').val();
+                const settings = { "hash": hash };
+                const url = 'https://nex.ainetguard.com/api/music/get';
+                
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    data: JSON.stringify(settings),
+                    xhrFields: {
+                        responseType: 'blob'
+                    },
+                    success: function(data, status, jqXHR) {
+                        const blob = new Blob([data], { type: 'audio/mp3' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'song.mp3';
+                        a.click();
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(error);
+                        alert('Error downloading song');
+                    }
+                });
+            });
+
+            // Play music button event listener
+            $('#play-button').click(function(e) {
+                e.preventDefault();
+                const hash = $('#hash-input').val();
+                const settings = { "hash": hash };
+                const url = 'https://nex.ainetguard.com/api/music/get';
+                
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    data: JSON.stringify(settings),
+                    xhrFields: {
+                        responseType: 'blob'
+                    },
+                    success: function(data, status, jqXHR) {
+                        const blob = new Blob([data], { type: 'audio/mp3' });
+                        const url = URL.createObjectURL(blob);
+                        document.getElementById('music-player').src = url;
+                        document.getElementById('music-player').play();
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(error);
+                        alert('Error playing song');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+

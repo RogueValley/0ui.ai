@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download Music</title>
+    <style>
+        body {
+            background-color: #2f2f2f;
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            background-color: #4f4f4f;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            height: 40px;
+            font-size: 18px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #6f6f6f;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+
+        button[type="button"] {
+            width: 100%;
+            height: 40px;
+            font-size: 18px;
+            padding: 10px;
+            border: none;
+            background-color: #8f8f8f;
+            color: #fff;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        button[type="button"]:hover {
+            background-color: #9f9f9f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Download Music</h1>
+        <form id="download-form">
+            <label for="api-url">API URL:</label>
+            <input type="text" id="api-url" value="https://nex.ainetguard.com/api/music/get">
+
+            <label for="hash-input">Hash:</label>
+            <input type="text" id="hash-input" value="40d5b410daa2950812b28f7e9a98a0096b2c974">
+
+            <label for="filename-input">Filename:</label>
+            <input type="text" id="filename-input" value="AI-PIE.mp3">
+        </form>
+
+        <button type="button" id="download-button">Download Music</button>
+        <button type="button" id="play-button">Play Music</button>
+        <audio id="music-player" controls></audio>
+    </div>
+
+    <script>
+        const downloadButton = document.getElementById('download-button');
+        const playButton = document.getElementById('play-button');
+        const musicPlayer = document.getElementById('music-player');
+
+        let apiUrl;
+        let hash;
+        let filename;
+
+        async function fetchMusic() {
+            try {
+                apiUrl = document.getElementById('api-url').value;
+                hash = document.getElementById('hash-input').value;
+                filename = document.getElementById('filename-input').value;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ hash: hash })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const blob = await response.blob();
+                return blob;
+            } catch (error) {
+                console.error('Error downloading music:', error);
+            }
+        }
+
+        downloadButton.addEventListener('click', async () => {
+            try {
+                const blob = await fetchMusic();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+
+                console.log('Music downloaded successfully!');
+            } catch (error) {
+                console.error('Error downloading music:', error);
+            }
+        });
+
+        playButton.addEventListener('click', async () => {
+            try {
+                const blob = await fetchMusic();
+                const url = URL.createObjectURL(blob);
+                musicPlayer.src = url;
+                musicPlayer.play();
+
+                console.log('Music playing!');
+            } catch (error) {
+                console.error('Error playing music:', error);
+            }
+        });
+    </script>
+</body>
+</html>
+

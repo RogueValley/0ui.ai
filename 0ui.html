@@ -6,7 +6,6 @@
     <title>Rogue LLM Chat</title>
     <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
 </head>
-
 <style>
 * {
   box-sizing: border-box;
@@ -363,1023 +362,744 @@ footer {
 }
 .hidden {
   display: none;
-}</style>
-
-<body>
-    <!-- Main Page Container -->
-    <div class="main-page">
-        <!-- Navigation Bar -->
-        <nav id="nav-bar" class="nav-bar">
-            <div id="app-logo" class="app-logo">Rogue 0Nex</div>
-
-                <button id="app-settings-button" class="nav-bar-button" aria-label="Open app settings menu">⚙️ App</button>
-                <button id="cloud-settings-button" class="nav-bar-button" aria-label="Open cloud settings menu">☁️ Cloud</button>
-                <button id="llm-settings-button" class="nav-bar-button" aria-label="Open LLM settings menu">✨ LLM</button>
-        </nav>
-<div id="loading-indicator">
-  <img  src="loading.gif" alt="Loading...">
-</div>
-        <!-- Main Chat Content -->
-              <div class="chat-body-container" id="chat-body-container">
-                <div class="chat-body" id="chat-body"></div>
-            </div>
-    
-        <!-- Input Section -->
-        <footer id="footer">
-            <div class="input-section" id="input-section">
-                <textarea id="user-input" class="normal" wrap="soft" placeholder="Type a message..."></textarea>
-                <button type="button" id="send-button">Send</button>
-            </div>
-        </footer>
-
-<!-- Settings Panel -->
-<div class="settings-panel" id="settings-panel">
-  <!-- Message Options Container -->
-  <div id="chat-options-container" style="display: none;">
-
-  <div class="button-container">
-  <button id="chat-options-save-button" class="button-save">&#128269; SAVE</button>
-    <button id="chat-options-button-close" class="button-close" aria-label="Close message options settings menu">&#9194; Close</button>
-  </div>
-  </div>
-  <!-- App Settings Container -->
-  <div id="app-settings-container" style="display: none;">
-    <h2>App Settings</h2>
-    <form id="app-settings-form">
-      <p>Screen Height: <span id="screen-height-value"></span></p>
-      <p>Window Height: <span id="window-height-value"></span></p>
-      <p>Screen Width: <span id="screen-width-display"></span></p>
-      <p>Window Width: <span id="window-width-display"></span></p>
-    </form>
-    <p>System Prompt:
-      <textarea id="app-system-prompt-input" class="app-system-prompt-input" wrap="soft" placeholder="Type a message..."></textarea>
-    </p>
-  <div class="button-container">
-  <button id="app-save-sysprompt-button" class="button-save">&#128190; SAVE</button>
-    <button id="app-settings-button-close" class="button-close" aria-label="Close app settings menu">&#9194; Close</button>
-  </div>
-  </div>
-  <!-- Cloud Settings Container -->
-  <div id="cloud-settings-container" style="display: none;">
-    <h2>Cloud Settings</h2>
-    <form id="cloud-settings-form">
-      <label for="api-url">API URL:</label><input type="text" id="api-url" name="api-url"><br><br>
-      <label for="client-id">Client ID:</label><input type="text" id="client-id" name="client-id"><br><br>
-      <label for="client-secret">Client Secret:</label><input type="text" id="client-secret" name="client-secret"><br><br>
-      <label for="client-stream">Client Stream:</label><input type="checkbox" id="client-stream" value="true" checked><br><br>
-    </form>
-<div class="button-container">
-    <button id="save-settings-button" class="button-save" aria-label="Save cloud settings">&#128190; Save</button>
-    <button id="cloud-settings-button-close" class="button-close" aria-label="Close cloud settings menu">&#9194; Close</button>
-  </div>
-  </div>
-  <!-- LLM Settings Container -->
-  <div id="llm-settings-container" style="display: none;">
-    <h2>LLM Settings</h2>
-    <label for="models-select">Select Model:</label><select id="models-select"><option value="">[EMPTY]</option></select><br><br>
-    <span id="models-active-title">Active Model: <span id="models-active"></span></span><br>
-<div class="button-container">
-    <button id="llm-settings-button-close" class="button-close" aria-label="Close LLM settings menu">&#9194; Close</button>
-  </div>
-</div>
-  </div>
-
-    <!-- Scripts -->
-</body><script>
-
-class Options {
-  constructor() {
-    this.defaultOptions = {
-      num_keep: 5,
-      seed: 42,
-      num_predict: 10,
-      top_k: 40,
-      top_p: 0.9,
-      min_p: 0.1,
-      typical_p: 0.2,
-      repeat_last_n: 3,
-      temperature: 0.7,
-      repeat_penalty: 1.2,
-      presence_penalty: 1.1,
-      frequency_penalty: 1.0,
-      penalize_newline: true,
-      stop: ['\&#10;', '\&#13;'],
-      numa: false,
-      num_ctx: 1024,
-      num_batch: 32,
-      num_gpu: 1,
-      main_gpu: 0,
-      use_mmap: true,
-      num_thread: 8
-    };
-  }
-
-  getOptions() {
-    const options = {};
-    for (const key in this.defaultOptions) {
-      if (document.getElementById(key)) {
-        switch (typeof this.defaultOptions[key]) {
-          case 'number':
-            options[key] = parseInt(document.getElementById(key).value);
-            break;
-          case 'boolean':
-            options[key] = document.getElementById(key).checked;
-            break;
-          default:
-            if (key === 'stop') {
-              options[key] = document.getElementById(key).value.split(',');
-            } else {
-              options[key] = document.getElementById(key).value;
-            }
-        }
-      }
-    }
-    return options;
-  }
-
-  saveOptions(options) {
-    localStorage.setItem('options', JSON.stringify(options));
-  }
-
-  loadOptions() {
-    const storedOptions = localStorage.getItem('options');
-    if (storedOptions) {
-      const options = JSON.parse(storedOptions);
-      for (const key in options) {
-        if (document.getElementById(key)) {
-          switch (typeof options[key]) {
-            case 'number':
-              document.getElementById(key).value = options[key];
-              break;
-            case 'boolean':
-              document.getElementById(key).checked = options[key];
-              break;
-            default:
-              if (key === 'stop') {
-                document.getElementById(key).value = options[key].join(',');
-              } else {
-                document.getElementById(key).value = options[key];
-              }
-          }
-        }
-      }
-    } else {
-      this.setDefaults();
-    }
-  }
-
-  setDefaults() {
-    for (const key in this.defaultOptions) {
-      if (document.getElementById(key)) {
-        switch (typeof this.defaultOptions[key]) {
-          case 'number':
-            document.getElementById(key).value = this.defaultOptions[key];
-            break;
-          case 'boolean':
-            document.getElementById(key).checked = this.defaultOptions[key];
-            break;
-          default:
-            if (key === 'stop') {
-              document.getElementById(key).value = this.defaultOptions[key].join(',');
-            } else {
-              document.getElementById(key).value = this.defaultOptions[key];
-            }
-        }
-      }
-    }
-  }
 }
 
 
-/**
- * Constants for DOM elements.
- */
-const ChatArea = document.querySelector('#chat-body');
-const ChatAreaContainer = document.querySelector('#chat-body');
 
+.chat-body-container { position: relative; }
+
+/* Thinking bubble overlay */
+.thinking-bubble {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  max-width: 360px;
+  padding: 10px 14px;
+  background: rgba(0,0,0,0.80);
+  color: #fff;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  display: none;
+  z-index: 1200;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+  transform-origin: top right;
+  transition: opacity 160ms ease, transform 160ms ease;
+  opacity: 0;
+  transform: translateY(-6px) scale(0.99);
+}
+.thinking-bubble.visible {
+  display: block;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.thinking-title { display:block; font-weight:600; margin-bottom:6px; font-size:13px; }
+.thinking-text { white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, monospace; font-size:13px; max-height:160px; overflow:auto; padding-right:6px; }
+
+
+
+
+
+</style>
+
+
+<body>
+  <!-- Navigation Bar -->
+  <nav class="nav-bar" id="nav-bar">
+    <div class="app-logo" id="app-logo">Rogue 0Nex</div>
+    <button id="app-settings-button" class="nav-bar-button" aria-label="Open app settings menu">⚙️ App</button>
+    <button id="cloud-settings-button" class="nav-bar-button" aria-label="Open cloud settings menu">☁️ Cloud</button>
+    <button id="llm-settings-button" class="nav-bar-button" aria-label="Open LLM settings menu">✨ LLM</button>
+  </nav>
+
+  <!-- Loading Indicator -->
+  <div id="loading-indicator">
+    <img src="loading.gif" alt="Loading...">
+  </div>
+
+  <!-- Chat Body -->
+<div class="chat-body-container" id="chat-body-container">
+  <div class="chat-body" id="chat-body"></div>
+
+  <!-- Thinking bubble (must exist once) -->
+  <div id="thinking-bubble" class="thinking-bubble" aria-hidden="true" role="status" aria-live="polite">
+    <strong class="thinking-title">Thinking…</strong>
+    <div id="thinking-bubble-text" class="thinking-text"></div>
+  </div>
+</div>
+
+
+
+  </div>
+
+  <!-- Input Section -->
+  <footer id="footer">
+    <div class="input-section" id="input-section">
+      <textarea id="user-input" class="normal" wrap="soft" placeholder="Type a message..."></textarea>
+      <button id="send-button" type="button">Send</button>
+    </div>
+  </footer>
+
+  <!-- Settings Panel -->
+  <div id="settings-panel" class="settings-panel" style="display:none;">
+
+    <!-- App Settings -->
+    <div id="app-settings-container" class="settings-group hidden">
+      <h2>App Settings</h2>
+      <form id="app-settings-form">
+        <p>Screen Height: <span id="screen-height-value"></span></p>
+        <p>Window Height: <span id="window-height-value"></span></p>
+        <p>Screen Width: <span id="screen-width-display"></span></p>
+        <p>Window Width: <span id="window-width-display"></span></p>
+      </form>
+
+      <label>System Prompt:</label>
+      <textarea id="app-system-prompt-input" wrap="soft" placeholder="Type a message..."></textarea>
+
+      <div class="button-container">
+        <button id="app-save-sysprompt-button" class="button-save">&#128190; SAVE</button>
+        <button id="app-settings-button-close" class="button-close" aria-label="Close app settings menu">&#9194; Close</button>
+      </div>
+    </div>
+
+    <!-- Cloud Settings -->
+    <div id="cloud-settings-container" class="settings-group hidden" style="display:none;">
+      <h2>Cloud Settings</h2>
+      <form id="cloud-settings-form">
+        <label for="api-url">API URL:</label>
+        <input type="text" id="api-url" name="api-url">
+
+        <label for="client-id">Client ID:</label>
+        <input type="text" id="client-id" name="client-id">
+
+        <label for="client-secret">Client Secret:</label>
+        <input type="text" id="client-secret" name="client-secret">
+
+        <label for="client-stream">Client Stream:</label>
+        <input type="checkbox" id="client-stream" value="true" checked>
+      </form>
+
+      <div class="button-container">
+        <button id="save-settings-button" class="button-save">&#128190; Save</button>
+        <button id="cloud-settings-button-close" class="button-close">&#9194; Close</button>
+      </div>
+    </div>
+
+    <!-- LLM Settings -->
+    <div id="llm-settings-container" class="settings-group hidden" style="display:none;">
+      <h2>LLM Settings</h2>
+
+      <label for="models-select">Select Model:</label>
+      <select id="models-select">
+        <option value="">[EMPTY]</option>
+      </select>
+
+      <p id="models-active-title">Active Model: <span id="models-active"></span></p>
+
+      <div class="button-container">
+        <button id="llm-settings-button-close" class="button-close">&#9194; Close</button>
+      </div>
+    </div>
+
+  </div>
+</body>
+<!-- remove the other module tag or combine files -->
+<script type="module">
+
+
+
+// DOM references
+const ChatArea = document.querySelector('#chat-body');
+const ChatAreaContainer = ChatArea;
 const TempText = document.getElementById('temp-text-area');
 const applogo = document.getElementById('app-logo');
-let error_out="";
+
+let error_out = "";
 let connectionReady = false;
-let includeCreds=true;
+let includeCreds = true;
 
 function resetConnection() {
   connectionReady = false;
-  }
-  
-/**
- * Establishes a connection to the API.
- *
- * @throws {Error} If not connected or connection fails.
- */
- 
-async function makeApiRequest(url, method, body = null, headers = null, blockOpen= false) {
+}
+
+/* ------------------------------
+   API REQUEST WRAPPER
+--------------------------------*/
+async function makeApiRequest(url, method, body = null, headers = null, blockOpen = false) {
   const controller = new AbortController();
   const signal = controller.signal;
 
-  let timerId = setTimeout(() => {
-    controller.abort();
-  }, headers == null ? 30000 : 200000);
-    
-  try {
+  const timeout = headers ? 200000 : 30000;
+  const timerId = setTimeout(() => controller.abort(), timeout);
 
+  try {
     const fetchOptions = {
       method,
-      ...headers && {  headers },
-      ...body && { body },
-      ...includeCreds && { credentials: "include" }, 
-     ...!blockOpen && { signal }
+      ...(headers && { headers }),
+      ...(body && { body }),
+      ...(includeCreds && { credentials: "include" }),
+      ...(!blockOpen && { signal })
     };
 
     const response = await fetch(url, fetchOptions);
-
-    clearTimeout(timerId); 
+    clearTimeout(timerId);
 
     if (!response.ok) {
-      throw new Error(`API request failed with status code ${response}: ${await response.text()}`);
+      throw new Error(`API request failed: ${response.status} ${await response.text()}`);
     }
 
     return response;
   } catch (error) {
-    if (timerId) {
-      clearTimeout(timerId); 
-    }
-    if (error.name === 'AbortError') {
-      return { error: 'Timeout exceeded' };
-    }
+    clearTimeout(timerId);
+    if (error.name === 'AbortError') return { error: 'Timeout exceeded' };
     return error;
   }
 }
 
-
+/* ------------------------------
+   CONNECTION HANDSHAKE
+--------------------------------*/
 async function establishConnection() {
-  if (!connectionReady) {
-    connectionReady = false;
-    const apiUrl = apiUrlInput.value.trim();
-    const clientId = clientIdInput.value.trim();
-    const clientSecret = clientSecretInput.value.trim();
-    
-    
-    try {
-       let response;
-       
-       loadingIndicator.style.display = 'flex';
-       applogo.classList.add('black');
+  if (connectionReady) return;
 
-       try {
-        includeCreds = true;
-       const url = URLadd("/api/ps", apiUrl);
-        response = await makeApiRequest(url, "GET");
-
-        if (response.ok) {
-            connectionReady = true;
-               return;
-        }
-       }
-       catch (error) {
-     
-       }
-
-       applogo.classList.add('green');
-  
-       try {
-         if (!clientId || !clientSecret) {
-           throw new Error("No API Key");
-         }
-         
-         const headers = { "CF-Access-Client-Id": clientId, "CF-Access-Client-Secret": clientSecret, "Content-Type": "application/json", "ai": "1" };
-         const url = URLadd("", apiUrl);
-
-         
-         includeCreds = true;
-          response = await makeApiRequest(url, "GET", null, headers);
-
-         if (response.ok) {
-         
-         
-           connectionReady = true;
-         } 
-        }
-        catch (error) {
-        } 
-        
-        
-       applogo.classList.add('yellow');
-  
-        
-      try {
-       const url = URLadd("/api/ps", apiUrl);
-        includeCreds = false;
-        response = await makeApiRequest(url, "GET");
-      
-        if (response.ok) {
-          connectionReady = true;
-             return;
-        }
-      }
-      catch (error) {
-      } 
-        
-      applogo.classList.add('red');
-   
-      connectionReady = false;
-    }
-    catch (error) {
-      connectionReady = false;
-    } 
-    finally {
-      loadingIndicator.style.display = 'none';
-      if(connectionReady)
-      {
-        if (applogo.classList.contains('green')) applogo.classList.remove('green');
-        if (applogo.classList.contains('yellow')) applogo.classList.remove('yellow');
-        if (applogo.classList.contains('red')) applogo.classList.remove('red');
-        if (applogo.classList.contains('black')) applogo.classList.remove('black');
-      } 
-    }
-  }
-  if (!connectionReady) {
-    throw new Error("Not connected to API");
-  }
-}
-
-
-
-/**
- * Load active models from the API.
- *
- * @async
- */
-async function loadActiveModels() {
-    
-    const apiUrl = apiUrlInput.value.trim();
-    const clientId = clientIdInput.value.trim();
-    const clientSecret = clientSecretInput.value.trim();
-    const modelsactive = document.getElementById('models-active');
-
-
-
-    try 
-    {
-        await establishConnection();
-        if (!connectionReady) {
-          await sleep(2000); 
-          await establishConnection();
-        }
-         if (!connectionReady) {
-       throw new Error("Error loading models - no connection");
-  
-      }
-        
-        const url = URLadd("/api/ps", apiUrl);
-        const res = await makeApiRequest(url, "GET");
-       
-
-        if (res.ok) {
-            
-            const models = await res.json();
-
-            if (Array.isArray(models.models) && models.models.length > 0) {
-        
-            
-                
-            let selectedOption = models.models[0].name; 
-
-            if(models.models[0].name == "[EMPTY]")
-               throw new Error("Error loading models");
-                    for (let i = 0; i < models.models.length; i++) {
-                        if (models.models[i].name === savedModelSelected) {
-                            selectedOption = savedModelSelected;
-                            break;
-                        }
-                    }
-
-                    modelsSelectDropdown.value = selectedOption;
-
-                    savedModelSelected = selectedOption;
-               
-                    modelsactive.textContent = savedModelSelected;
-                    
-                    return;
-            }
-          
-        
-      
-        } else {
-   throw new Error("Error loading models");
-        }
-        
-        
-               modelsactive.textContent = "";
-    } 
-    catch (error) {
-       
-        if (modelsSelectDropdown && modelsSelectDropdown.options) {
-            while (modelsSelectDropdown.options.length > 0) {
-                modelsSelectDropdown.remove(0);
-            }
-        }
-   throw new Error("Error loading models");
-    }  finally {
-        
-        loadingIndicator.style.display = 'none';
-    }
-}
-
-/**
- * Load models from the API.
- *
- * @async
- */
-async function loadModels() {
-    
-    const apiUrl = apiUrlInput.value.trim();
-    const clientId = clientIdInput.value.trim();
-    const clientSecret = clientSecretInput.value.trim();
-
-    try 
-    {
-      await establishConnection();
-      
-        loadingIndicator.style.display = 'flex';
-
-        
-        if (modelsSelectDropdown && modelsSelectDropdown.options) {
-            while (modelsSelectDropdown.options.length > 0) {
-                modelsSelectDropdown.remove(0);
-            }
-        }
-
-        
-        const url = URLadd("/api/tags", apiUrl);
-       const res = await makeApiRequest(url, "GET");
-  
-        if (res.ok) {
-            
-            const models = await res.json();
-
-            
-            if (Array.isArray(models.models)) {
-                
-                models.models.forEach(model => {
-                    if(!model.name.includes("embed"))
-                    {
-                      const option = document.createElement("option");
-                      option.value = model.name;
-                      option.text = model.name;
-                      modelsSelectDropdown.add(option);
-                    }
-                });
-
-                
-                let selectedOption = modelsSelectDropdown.options[0].value; 
-
-                
-                for (let i = 0; i < modelsSelectDropdown.options.length; i++) {
-                    if (modelsSelectDropdown.options[i].value === savedModelSelected) {
-                        selectedOption = savedModelSelected;
-                        break;
-                    }
-                }
-
-                
-                modelsSelectDropdown.value = selectedOption;
-
-                
-                savedModelSelected = modelsSelectDropdown.value;
-                localStorage.setItem('modelSelected', savedModelSelected);
-            } else {
-                TempText.textContent = "Error: Unexpected response format.";
-            }
-        } 
-        else  
-        {
-   
-        if (modelsSelectDropdown && modelsSelectDropdown.options) {
-            while (modelsSelectDropdown.options.length > 0) {
-                modelsSelectDropdown.remove(0);
-            }
-        }
-        throw new Error("Error loading models");
-        }
-    } catch (error) {
-    throw new Error("Error loading models");
-    } finally {
-        
-        loadingIndicator.style.display = 'none';
-    }
-}
-
-
-function GetChatHistory() {
-  const bubbles = ChatArea.querySelectorAll('pre');
-
-  if (bubbles.length === 0) {
-    return ''; 
-  }
-
-  const combinedText = [...bubbles].map(bubble => bubble.textContent).join('\&#10;\&#10;');
-  return combinedText;
-}
-/**
- * Send a message to the API.
- *
- * @async
- */
-async function sendMessage() {
-  
   const apiUrl = apiUrlInput.value.trim();
   const clientId = clientIdInput.value.trim();
   const clientSecret = clientSecretInput.value.trim();
-  const chatMessage = messageInput.value;
-  const clientStream = clientStreamInput.value != "false";
-  const modelSelected = savedModelSelected;
 
-
-  if (!modelSelected || !chatMessage|| messageInput.value == "") {
-      throw new Error("Error !modelSelected || !chatMessage");  
-  }
+  loadingIndicator.style.display = 'flex';
+  applogo.classList.add('black');
 
   try {
+    // 1. Try with credentials
+    includeCreds = true;
+    let url = URLadd("/api/ps", apiUrl);
+    let response = await makeApiRequest(url, "GET");
+    if (response.ok) return (connectionReady = true);
 
-  let messages = {
-    "conversation": []
-  };
+    applogo.classList.add('green');
 
-  if (systemPrompt && systemPrompt !== "") {
-    messages.conversation.push({
-    "role": "system",
-    "content": systemPrompt
-    });
-  }
-
-  const bubbles = ChatArea.querySelectorAll('pre');
-
-  if (bubbles.length !== 0) {
-    const historyMessages = [...bubbles].map(bubble => bubble.textContent);
-
-    historyMessages.forEach((history) => {
-      if (history.startsWith("User:")) {
-        messages.conversation.push({
-          "role": "user",
-          "content": history.replace("User:", "").trim()
-        });
-      } else 
-      if (history.startsWith("AI:")) {
-        messages.conversation.push({
-        "role": "assistant",
-        "content": history.replace("AI:", "").trim()
-         });
-       }
-    });
-  }
-
-  messages.conversation.push({
-    "role": "user",
-    "content": messageInput.value
-  });
-
-
-const payload = {
-  "model": modelSelected,
-  "messages": messages.conversation,
-  "stream": clientStream
-};
-
-
-    let result;
-    try {
-      result = JSON.stringify(payload);
-    } catch (error) {
-      result = {};
+    // 2. Try with CF Access headers
+    if (clientId && clientSecret) {
+      const headers = {
+        "CF-Access-Client-Id": clientId,
+        "CF-Access-Client-Secret": clientSecret,
+        "Content-Type": "application/json",
+        "ai": "1"
+      };
+      includeCreds = true;
+      response = await makeApiRequest(URLadd("", apiUrl), "GET", null, headers);
+      if (response.ok) return (connectionReady = true);
     }
 
-    await establishConnection();
+    applogo.classList.add('yellow');
 
-    const url = URLadd("/api/chat", apiUrl);
-    const res = await makeApiRequest(url, "POST", result,null, true);
+    // 3. Try without credentials
+    includeCreds = false;
+    response = await makeApiRequest(URLadd("/api/ps", apiUrl), "GET");
+    if (response.ok) return (connectionReady = true);
 
-    if (res.ok) {
-      p(chatMessage, res, payload.stream);
-    } else {
-      throw new Error("Error loading models");
-    }
-  } catch (error) {
-    throw new Error("Error loading models");
-  } 
- 
-}
-
-async function p(chatMessage,res,isStream)
-{
-   
-  try { 
-          createBubble("user", chatMessage);
-
-                              ChatAreaContainer.scrollTo({
-                          top: ChatAreaContainer.scrollHeight - ChatAreaContainer.clientHeight,
-                          behavior: 'smooth'
-                        });
-            const bubble = createBubble("ai", "");
-
-            if (isStream) {
-                const reader = res.body.getReader();
-                let partialJson = "";
-                const processor = new StreamingJsonProcessor(); 
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    const chunk = new TextDecoder().decode(value);
-                    partialJson += chunk;
-
-                    const contentArray = processor.processChunk(partialJson); 
-                    partialJson = ""; 
-
-                    
-                    
-                    contentArray.forEach(content => {
-                        bubble.textContent +=replaceCharEncodings(  content);
-
-                        resizePre(bubble);
-                    
-                        if (ChatAreaContainer.scrollTop === ChatAreaContainer.scrollHeight - ChatAreaContainer.clientHeight) {
-                        
-                        } else if (ChatAreaContainer.scrollHeight > ChatAreaContainer.clientHeight) {
-                          ChatAreaContainer.scrollTo({
-                          top: ChatAreaContainer.scrollHeight - ChatAreaContainer.clientHeight,
-                          behavior: 'smooth'
-                          });
-                        }
-                        
-                    });
-                }
-            } else {
-                const resText = await res.text();
-                bubble.textContent += `\&#10;${resText}`;
-            }
-         messageInput.focus();
- } catch (error) {
-    throw new Error("Error loading models");
+    applogo.classList.add('red');
+    throw new Error("Not connected to API");
   } finally {
-  loadingIndicator.style.display = 'none';
-
-  }   
-}
-
-function getMsgOptions()
-{
- const options = {
-    num_keep: parseInt(document.getElementById('num_keep').value),
-    seed: parseInt(document.getElementById('seed').value),
-    num_predict: parseInt(document.getElementById('num_predict').value),
-    top_k: parseInt(document.getElementById('top_k').value),
-    top_p: parseFloat(document.getElementById('top_p').value),
-    min_p: parseFloat(document.getElementById('min_p').value),
-    typical_p: parseFloat(document.getElementById('typical_p').value),
-    repeat_last_n: parseInt(document.getElementById('repeat_last_n').value),
-    temperature: parseFloat(document.getElementById('temperature').value),
-    repeat_penalty: parseFloat(document.getElementById('repeat_penalty').value),
-    presence_penalty: parseFloat(document.getElementById('presence_penalty').value),
-    frequency_penalty: parseFloat(document.getElementById('frequency_penalty').value),
-    penalize_newline: document.getElementById('penalize_newline').checked,
-    stop: document.getElementById('stop').value.split(','),
-    numa: document.getElementById('numa').checked,
-    num_ctx: parseInt(document.getElementById('num_ctx').value),
-    num_batch: parseInt(document.getElementById('num_batch').value),
-    num_gpu: parseInt(document.getElementById('num_gpu').value),
-    main_gpu: parseInt(document.getElementById('main_gpu').value),
-    use_mmap: document.getElementById('use_mmap').checked,
-    num_thread: parseInt(document.getElementById('num_thread').value)
-  };
-  
-  return options;
-}
-/**
- * Class for processing streaming JSON data.
- */
-class StreamingJsonProcessor {
-    constructor() {
-        this.buffer = "";
-    }
-
-    /**
-     * Process a chunk of JSON data and return an array of content.
-     *
-     * @param {string} chunk
-     * @returns {string[]}
-     */
-    processChunk(chunk) {
-        this.buffer += chunk;
-        let contentArray = [];
-
-        while (true) {
-            const endIndex = this.findNextJsonEndIndex(this.buffer, 0);
-
-            if (endIndex === -1) {
-                break; 
-            }
-
-            const jsonString = this.sanitizeJson(this.buffer.substring(0, endIndex + 1));
-
-            try {
-                const jsonData = extractContent(jsonString);
-
-                if (jsonData) {
-                    contentArray.push(jsonData);
-                }
-            } catch (error) {
-                console.error("Error parsing JSON:", error);
-            }
-
-            
-            this.buffer = this.buffer.substring(endIndex + 1);
-        }
-        return contentArray;
-    }
-
-    /**
-     * Find the index of the next complete JSON object in the buffer.
-     *
-     * @param {string} str
-     * @param {number} startIndex
-     * @returns {number}
-     */
-    findNextJsonEndIndex(str, startIndex) {
-        let openBraces = 0;
-        let openSquares = 0;
-        let inString = false;
-        let stringChar = null;
-
-        for (let i = startIndex; i < str.length; i++) {
-            const char = str[i];
-
-            if (!inString) {
-                if (char === '{' || char === '[') {
-                    openBraces++;
-                    openSquares++;
-                } else if (char === '}' || char === ']') {
-                    openBraces--;
-                    openSquares--;
-                }
-            }
-
-            if (openBraces === 0 && openSquares === 0 && !inString) {
-                return i + 1;
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * Sanitize a JSON string by removing trailing whitespace and commas.
-     *
-     * @param {string} jsonString
-     * @returns {string}
-     */
-    sanitizeJson(jsonString) {
-        
-        let sanitizedString = jsonString.trim();
-
-        
-        sanitizedString = sanitizedString.replace(/,\s*([\]}])/g, '$1');
-
-        return sanitizedString;
-    }
-}
-
-/**
- * Extract the content from a JSON string.
- *
- * @param {string} jsonString
- * @returns {string|null}
- */
-
-
-function extractContent(jsonString) {
-
-  if (!jsonString.endsWith(',"done":false}')) {
-     return "";
-  }
-  
-  let startMarker = '"content":';
-  let endMarker = ',"done":'; 
-
-  let startIndex = jsonString.indexOf(startMarker);
-  if (startIndex === -1) {
-    return null; 
-  }
-
-  startIndex += startMarker.length+1;
-
-  let endIndex = jsonString.indexOf(endMarker, startIndex);
-  if (endMarker === '}' && endIndex === -1) {
-      endIndex = jsonString.lastIndexOf('}');
-      if (endIndex === -1) return null;
-  } else if (endIndex === -1) {
-    return null; 
-  }
-  
-  let content = jsonString.substring(startIndex, endIndex-2);
-
-  return content;
-}
-
-function URLadd(path, baseurl) {
-  if (baseurl.endsWith('/')) {
-    return baseurl + path.replace(/^\/+/, '');
-  } else {
-    return baseurl + '/' + path.replace(/^\/+/, '');
+    loadingIndicator.style.display = 'none';
+    applogo.classList.remove('black', 'green', 'yellow', 'red');
   }
 }
 
+/* ------------------------------
+   LOAD ACTIVE MODEL
+--------------------------------*/
+async function loadActiveModels() {
+  const apiUrl = apiUrlInput.value.trim();
+  const modelsactive = document.getElementById('models-active');
 
+  try {
+    await establishConnection();
+    if (!connectionReady) throw new Error("No connection");
 
-/**
- * Replaces character encodings in a given text with their corresponding characters.
- *
- * @param {*} text - The input text containing character encodings.
- * @returns {string} The text with character encodings replaced, or an error message if text is not a string.
- */
-function replaceCharEncodings(text) {
-  
-  if (typeof text !== 'string') {
-    return 'Error: Input must be a string.';
-  }
+    const res = await makeApiRequest(URLadd("/api/ps", apiUrl), "GET");
+    if (!res.ok) throw new Error("Bad response");
 
-  
-  const charMap = {
-    "\\u003e": ">",
-    "\\&#10;": "\&#10;",
-    "\\u003c": "<",
-    "\\u0026": "&", 
-    "\\u0027": "'", 
-    
-  };
+    const models = await res.json();
 
-  /**
-   * Replaces a matched character encoding with its corresponding character.
-   *
-   * @param {string} match - The matched character encoding.
-   * @returns {string} The replaced character or the original match if not found in charMap.
-   */
-  function replaceMatch(match) {
-    
-    if (match.startsWith("\\u")) {
-      try {
-        
-        return String.fromCharCode(parseInt(match.substring(2), 16));
-      } catch (e) {
-        console.error(`Error parsing Unicode escape sequence: ${e}`);
+    let selected = models.models[0].name;
+    if (selected === "[EMPTY]") throw new Error("Empty model list");
+
+    for (const m of models.models) {
+      if (m.name === savedModelSelected) {
+        selected = savedModelSelected;
+        break;
       }
     }
 
-    
-    return charMap[match] || match;
+    modelsSelectDropdown.value = selected;
+    savedModelSelected = selected;
+    modelsactive.textContent = selected;
+  } finally {
+    loadingIndicator.style.display = 'none';
+  }
+}
+
+/* ------------------------------
+   LOAD ALL MODELS
+--------------------------------*/
+async function loadModels() {
+  const apiUrl = apiUrlInput.value.trim();
+
+  try {
+    await establishConnection();
+    loadingIndicator.style.display = 'flex';
+
+    // Clear dropdown
+    while (modelsSelectDropdown.options.length) {
+      modelsSelectDropdown.remove(0);
+    }
+
+    const res = await makeApiRequest(URLadd("/api/tags", apiUrl), "GET");
+    if (!res.ok) throw new Error("Bad response");
+
+    const models = await res.json();
+    if (!Array.isArray(models.models)) throw new Error("Invalid model list");
+
+    models.models.forEach(model => {
+      if (!model.name.includes("embed")) {
+        const opt = new Option(model.name, model.name);
+        modelsSelectDropdown.add(opt);
+      }
+    });
+
+    let selected = modelsSelectDropdown.options[0]?.value;
+    for (const opt of modelsSelectDropdown.options) {
+      if (opt.value === savedModelSelected) {
+        selected = savedModelSelected;
+        break;
+      }
+    }
+
+    modelsSelectDropdown.value = selected;
+    savedModelSelected = selected;
+    localStorage.setItem('modelSelected', selected);
+  } finally {
+    loadingIndicator.style.display = 'none';
+  }
+}
+
+/* ------------------------------
+   CHAT HISTORY
+--------------------------------*/
+function GetChatHistory() {
+  const bubbles = ChatArea.querySelectorAll('pre');
+  return bubbles.length
+    ? [...bubbles].map(b => b.textContent).join('\n\n')
+    : '';
+}
+
+/* ------------------------------
+   SEND MESSAGE
+--------------------------------*/
+async function sendMessage() {
+  const apiUrl = apiUrlInput.value.trim();
+  const chatMessage = messageInput.value;
+  const clientStream = clientStreamInput.value !== "false";
+  const modelSelected = savedModelSelected;
+
+  if (!modelSelected || !chatMessage) {
+    throw new Error("Missing model or message");
   }
 
-  
-  const regex = /\\u[0-9a-fA-F]{4}|\\&#10;|\\&#13;/g;
-  return text.replace(regex, replaceMatch);
+  const messages = { conversation: [] };
+
+  if (systemPrompt) {
+    messages.conversation.push({ role: "system", content: systemPrompt });
+  }
+
+  const bubbles = ChatArea.querySelectorAll('pre');
+  [...bubbles].forEach(b => {
+    const text = b.textContent;
+    if (text.startsWith("User:")) {
+      messages.conversation.push({ role: "user", content: text.replace("User:", "").trim() });
+    } else if (text.startsWith("AI:")) {
+      messages.conversation.push({ role: "assistant", content: text.replace("AI:", "").trim() });
+    }
+  });
+
+  messages.conversation.push({ role: "user", content: chatMessage });
+
+  const payload = {
+    model: modelSelected,
+    messages: messages.conversation,
+    stream: clientStream
+  };
+
+  await establishConnection();
+
+  const res = await makeApiRequest(
+    URLadd("/api/chat", apiUrl),
+    "POST",
+    JSON.stringify(payload),
+    null,
+    true
+  );
+
+  if (!res.ok) throw new Error("Chat request failed");
+
+  await p(chatMessage, res, payload.stream);
+}
+
+/* ------------------------------
+   PROCESS RESPONSE
+--------------------------------*/
+async function p(chatMessage, res, isStream) {
+  try {
+    createBubble("user", chatMessage);
+    ChatAreaContainer.scrollTo({ top: ChatAreaContainer.scrollHeight, behavior: 'smooth' });
+
+    const bubble = createBubble("ai", "");
+
+    if (isStream) {
+      const reader = res.body.getReader();
+      const processor = new StreamingJsonProcessor();
+      let partial = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        partial += new TextDecoder().decode(value);
+        const chunks = processor.processChunk(partial);
+        partial = "";
+
+        chunks.forEach(content => {
+          bubble.textContent += replaceCharEncodings(content);
+          resizePre(bubble);
+          ChatAreaContainer.scrollTo({ top: ChatAreaContainer.scrollHeight, behavior: 'smooth' });
+        });
+      }
+    } else {
+      bubble.textContent += "\n" + await res.text();
+    }
+
+    messageInput.focus();
+  } finally {
+    loadingIndicator.style.display = 'none';
+  }
+}
+
+/* ------------------------------
+   STREAMING JSON PROCESSOR
+--------------------------------*/
+class StreamingJsonProcessor {
+  constructor() {
+    this.buffer = "";
+  }
+
+  processChunk(chunk) {
+    this.buffer += chunk;
+    const out = [];
+
+    while (true) {
+      const end = this.findNextJsonEndIndex(this.buffer);
+      if (end === -1) break;
+
+      const jsonString = this.sanitizeJson(this.buffer.slice(0, end));
+      try {
+        const content = extractContent(jsonString);
+        if (content) out.push(content);
+      } catch (e) {
+        console.error("JSON parse error:", e);
+      }
+
+      this.buffer = this.buffer.slice(end);
+    }
+
+    return out;
+  }
+
+  findNextJsonEndIndex(str) {
+    let depth = 0;
+    let inString = false;
+
+    for (let i = 0; i < str.length; i++) {
+      const c = str[i];
+
+      if (c === '"' && str[i - 1] !== '\\') inString = !inString;
+      if (!inString) {
+        if (c === '{' || c === '[') depth++;
+        if (c === '}' || c === ']') depth--;
+        if (depth === 0) return i + 1;
+      }
+    }
+    return -1;
+  }
+
+  sanitizeJson(str) {
+    return str.trim().replace(/,\s*([\]}])/g, '$1');
+  }
 }
 
 
 
 
-const chatBody = document.getElementById('chat-body');
 
 
-let chatBodyHeight;
-
-let screenHeight;
-let windowHeight;
-let screenWidth;
-let windowWidth;
-
-const sreenHeightDisplay = document.getElementById('screen-height-value');
-const windowHeightDisplay = document.getElementById('window-height-value');
-
-const screenWidthDisplay = document.getElementById('screen-width-display');
-const windowWidthDisplay = document.getElementById('window-width-display');
-
-const textarea = document.getElementById('user-input');
 
 
-function guiSizeChange() {
-  
-  const mainChatContent = document.querySelector('.chat-body-container');
-  mainChatContent.style.height = '88dvh';
 
-  
-  const bubbles = document.querySelectorAll('.chat-body pre');
 
-  
-  bubbles.forEach(abubble => {
-resizePre(abubble) 
+
+/**
+ * Fallback safe JSON parse.
+ * - Never throws
+ * - Rejects incomplete JSON
+ * - Strips dangerous keys
+ * - Uses secureParse() if available
+ */
+function safeJsonParse(text) {
+  if (typeof text !== 'string' || text.trim() === '') return null;
+
+  // Try secure parser first
+  if (typeof secureParse === 'function') {
+    try {
+      const out = secureParse(text);
+      if (out !== undefined) return out;
+    } catch {
+      // fall through to local parser
+    }
+  }
+
+  // Local safe fallback
+  try {
+    return JSON.parse(text, (k, v) => {
+      if (k === '__proto__' || k === 'constructor' || k === 'prototype') return undefined;
+      if (typeof v === 'function') return undefined;
+      return v;
+    });
+  } catch {
+    // Incomplete or invalid JSON
+    return null;
+  }
+}
+
+
+/**
+ * Decode only the escape sequences expected from LLM streams.
+ * Conservative by design.
+ */
+function replaceCharEncodings(text) {
+  if (typeof text !== 'string') return '';
+
+  const map = {
+    '\\&#10;': '\n',
+    '\\&#13;': '\r',
+    '\\u003c': '<',
+    '\\u003e': '>',
+    '\\u0026': '&',
+    '\\u0027': "'"
+  };
+
+  return text.replace(/\\u[0-9a-fA-F]{4}|\\&#10;|\\&#13;/g, m => {
+    if (m.startsWith('\\u')) {
+      const hex = m.slice(2);
+      return /^[0-9a-fA-F]{4}$/.test(hex)
+        ? String.fromCharCode(parseInt(hex, 16))
+        : m;
+    }
+    return map[m] || m;
   });
 }
 
+
+/**
+ * Minimal sanitizer for textContent insertion.
+ * Removes control chars + risky punctuation.
+ */
+/**
+ * Minimal sanitizer for textContent insertion.
+ * Allows all code characters (< > { } ` etc.)
+ * Removes only control characters that break rendering.
+ */
+function sanitizeText(s) {
+  if (typeof s !== 'string') return '';
+  return s.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
+}
+
+
+/**
+ * Extracts content from a JSON fragment.
+ * Accepts:
+ *   - {"content":"..."}
+ *   - {"delta":{"content":"..."}}
+ * Returns decoded + sanitized text.
+ */
+function extractContent(fragment) {
+  let obj = fragment;
+
+  // Parse if string
+  if (typeof fragment === 'string') {
+    obj = safeJsonParse(fragment);
+    if (!obj || typeof obj !== 'object') return null;
+  }
+
+  // NEW: support your actual schema
+  const msg = obj.message || {};
+
+  // Ignore "thinking" tokens
+  if (typeof msg.thinking === 'string' && msg.thinking.trim() !== '') {
+    return null;
+  }
+
+  // Extract actual assistant output
+  const content =
+    (typeof msg.content === 'string' && msg.content) ||
+    (typeof obj.response === 'string' && obj.response) ||
+    (obj.delta && typeof obj.delta.content === 'string' && obj.delta.content) ||
+    null;
+
+  if (!content) return null;
+
+  const decoded = replaceCharEncodings(content);
+  return sanitizeText(decoded);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function guiSizeChange() {
+  document.querySelector('.chat-body-container').style.height = '88dvh';
+  document.querySelectorAll('.chat-body pre').forEach(resizePre);
+}
 
 function saveLayout() {
   localStorage.setItem('chatBodyHeight', chatBodyHeight);
 }
 
-
 function loadLayout() {
   chatBodyHeight = localStorage.getItem('chatBodyHeight');
 }
 
-  
-  loadLayout();
 
-
-
-function resizePre(preElement) {
-  preElement.style.height = 'auto';
-  preElement.style.height = preElement.scrollHeight + 'px';
+function resizePre(pre) {
+  pre.style.height = 'auto';
+  pre.style.height = pre.scrollHeight + 'px';
 }
 
 function updateBubble(bubble) {
-  const scrollHeight = bubble.scrollHeight;
-  bubble.style.height = `${scrollHeight}px`;
+  bubble.style.height = bubble.scrollHeight + 'px';
 }
 
 function createBubble(role, text) {
   const bubble = document.createElement('pre');
-  if (role === 'user') {
-   bubble.className = 'user-bubble';
-    bubble.textContent = "User: " + text.replace(/\&#10;/g, "\&#13;\&#10;");
-  } else if (role === 'ai') {
-   bubble.className = 'ai-bubble';
-    bubble.textContent = "AI: " + text.replace(/\&#10;/g, "\&#13;\&#10;");
-  }
+  const prefix = role === 'user' ? 'User: ' : 'AI: ';
 
-  
-  bubble.rows = 1;
+  bubble.className = role === 'user' ? 'user-bubble' : 'ai-bubble';
+  bubble.textContent = prefix + text.replace(/\&#10;/g, "\&#13;\&#10;");
   bubble.style.height = 'auto';
   bubble.style.overflowY = 'hidden';
-
-  chatBody.appendChild(bubble);
-
+  bubble.rows = 1;
   bubble.disabled = true;
 
-  
-  const scrollHeight = bubble.scrollHeight;
-  bubble.style.height = `${scrollHeight}px`;
-  
+  chatBody.appendChild(bubble);
+  bubble.style.height = bubble.scrollHeight + 'px';
+
   return bubble;
 }
 
-
-
-
 function displayTempOutput(tempTextArea) {
-  
   tempTextArea.id = 'ai-bubble';
   tempTextArea.classList.add('ai-bubble');
-
-  
-  tempTextArea.style.display = 'block'; 
+  tempTextArea.style.display = 'block';
 }
 
 
-const cloudSettingsButton = document.querySelector('#cloud-settings-button');
-const cloudSettingsButtonClose = document.querySelector('#cloud-settings-button-close');
-const cloudSettingsContainer = document.querySelector('#cloud-settings-container');
 
 
-const chatOptionsButton = document.querySelector('#chat-options-button');
-const chatOptionsButtonClose = document.querySelector('#chat-options-button-close');
-const chatOptionsSaveButton = document.querySelector('#chat-options-save-button');
-
-const appSettingsButton = document.querySelector('#app-settings-button');
-const appSettingsButtonClose = document.querySelector('#app-settings-button-close');
-const appSettingsContainer = document.querySelector('#app-settings-container');
-const appSaveSysPromptButton = document.querySelector('#app-save-sysprompt-button');
-const syspromptInput = document.querySelector('#app-system-prompt-input');
-
-const llmSettingsButton = document.querySelector('#llm-settings-button');
-const llmSettingsButtonClose = document.querySelector('#llm-settings-button-close');
-const llmSettingsContainer = document.querySelector('#llm-settings-container');
-const saveSettingsButton = document.querySelector('#save-settings-button');
-
-const modelsSelectDropdown = document.querySelector('#models-select');
-const messageInput = document.querySelector('#user-input');
-const sendButton = document.querySelector('#send-button');
-const messageContainer = document.querySelector('.input-container');
 
 
-const loadingIndicator = document.querySelector('#loading-indicator');
 
-const apiUrlInput = document.querySelector('#api-url');
-const clientIdInput = document.querySelector('#client-id');
-const clientSecretInput = document.querySelector('#client-secret');
-const clientStreamInput = document.querySelector('#client-stream');
-const darkModeButton = document.querySelector('#dark-mode-button');
+
+
+
+
+
+
+
+
+// Core chat elements
+const chatBody = document.getElementById('chat-body');
+const messageInput = document.getElementById('user-input');
+const sendButton = document.getElementById('send-button');
+const loadingIndicator = document.getElementById('loading-indicator');
+
+// Layout tracking
+let chatBodyHeight;
+let screenHeight, windowHeight, screenWidth, windowWidth;
+
+const sreenHeightDisplay = document.getElementById('screen-height-value');
+const windowHeightDisplay = document.getElementById('window-height-value');
+const screenWidthDisplay = document.getElementById('screen-width-display');
+const windowWidthDisplay = document.getElementById('window-width-display');
+
+// Settings UI
+const cloudSettingsButton = document.getElementById('cloud-settings-button');
+const cloudSettingsButtonClose = document.getElementById('cloud-settings-button-close');
+const cloudSettingsContainer = document.getElementById('cloud-settings-container');
+
+const appSettingsButton = document.getElementById('app-settings-button');
+const appSettingsButtonClose = document.getElementById('app-settings-button-close');
+const appSettingsContainer = document.getElementById('app-settings-container');
+const appSaveSysPromptButton = document.getElementById('app-save-sysprompt-button');
+const syspromptInput = document.getElementById('app-system-prompt-input');
+
+const llmSettingsButton = document.getElementById('llm-settings-button');
+const llmSettingsButtonClose = document.getElementById('llm-settings-button-close');
+const llmSettingsContainer = document.getElementById('llm-settings-container');
+const saveSettingsButton = document.getElementById('save-settings-button');
+
+// Model selection
+const modelsSelectDropdown = document.getElementById('models-select');
+
+// Cloud/API inputs
+const apiUrlInput = document.getElementById('api-url');
+const clientIdInput = document.getElementById('client-id');
+const clientSecretInput = document.getElementById('client-secret');
+const clientStreamInput = document.getElementById('client-stream');
+
+// Misc UI
+const darkModeButton = document.getElementById('dark-mode-button');
 const body = document.body;
 
-
+// Saved values
 const savedApiUrl = localStorage.getItem('apiUrl');
 const savedClientId = localStorage.getItem('clientId');
 const savedClientSecret = localStorage.getItem('clientSecret');
@@ -1391,315 +1111,571 @@ let savedModelSelected = localStorage.getItem('modelSelected');
 
 
 
+
+
+
+
+
+class Options {
+  constructor() {
+    this.storageKey = 'options';
+    this._options = this._loadFromStorage();
+  }
+
+  _loadFromStorage() {
+    try {
+      const raw = localStorage.getItem(this.storageKey);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      return (parsed && typeof parsed === 'object') ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  getOptions() {
+    return { ...this._options };
+  }
+
+  loadOptions() {
+    this._options = this._loadFromStorage();
+    return this.getOptions();
+  }
+
+  saveOptions(opts) {
+    if (!opts || typeof opts !== 'object') return false;
+
+    // sanitize + secure save
+    const safe = this._sanitize(opts);
+    if (!safe) return false;
+
+    this._options = safe;
+    localStorage.setItem(this.storageKey, JSON.stringify(safe));
+    return true;
+  }
+
+  _sanitize(opts) {
+    const sensitive = [
+      'apiKey', 'apiSecret', 'clientSecret',
+      'password', 'token', 'accessToken'
+    ];
+
+    const copy = { ...opts };
+    for (const k of sensitive) {
+      if (k in copy) delete copy[k];
+    }
+
+    const replacer = (key, value) =>
+      typeof value === 'function' || typeof value === 'undefined'
+        ? undefined
+        : value;
+
+    try {
+      const json = JSON.stringify(copy, replacer);
+
+      if (new Blob([json]).size > 100_000) {
+        console.warn('Options: payload too large');
+        return null;
+      }
+
+      return JSON.parse(json);
+    } catch (e) {
+      console.error('Options: sanitize failed', e);
+      return null;
+    }
+  }
+}
+
+function saveSystemPrompt() {
+  // Pull the latest value from the UI
+  const value = syspromptInput.value;
+
+  // Update the in‑memory system prompt
+  systemPrompt = value;
+
+  // Persist to localStorage
+  localStorage.setItem('system-prompt', value);
+
+  // Reset connection so the next request uses the new prompt
+  resetConnection();
+}
+
+
+// ------------------------------
+// GLOBAL STATE INITIALIZATION
+// ------------------------------
+
+// Options manager
 const options = new Options();
-const currentOptions = options.getOptions();
 
+// Always fetch fresh options when needed
+function getCurrentOptions() {
+  return options.getOptions();
+}
 
-
+// Cached DOM references
 const settingsAside = document.querySelector('.settings-panel');
+
+// Message‑send state
 let isSending = false;
 
-
+// Input behavior
 let SendOnEnter = true;
 
+// System prompt (safe fallback)
+let systemPrompt = typeof savedSystempPrompt === 'string'
+  ? savedSystempPrompt
+  : '';
 
-let systemPrompt = savedSystempPrompt;
+// Load layout settings early
+loadLayout();
+
+
+
+
 document.addEventListener('DOMContentLoaded', () => {
-  
-  
-  setTimeout(() => {
-    requestAnimationFrame(guiSizeChange);
-  }, 100); 
-  
-  
+
+  // Initial UI adjustments
+  setTimeout(() => requestAnimationFrame(guiSizeChange), 100);
   options.loadOptions();
-  
-    messageInput.focus();
-  resize_textbox(); 
-   
-  
+  messageInput.focus();
+  resize_textbox();
+
   document.querySelector('#models-active').textContent = "";
 
-  
-  if (savedApiUrl) {
-    apiUrlInput.value = savedApiUrl;
-  }
-  if (savedClientId) {
-    clientIdInput.value = savedClientId;
-  }
-  if (savedClientSecret) {
-    clientSecretInput.value = savedClientSecret;
-  }
+  // Load saved values
+  if (savedApiUrl) apiUrlInput.value = savedApiUrl;
+  if (savedClientId) clientIdInput.value = savedClientId;
+  if (savedClientSecret) clientSecretInput.value = savedClientSecret;
+  if (savedSystempPrompt) systemPrompt = savedSystempPrompt;
 
-  clientStreamInput.checked = savedClientStream != "true";
+  clientStreamInput.checked = savedClientStream !== "true";
 
   if (savedModelSelected) {
-    const option = document.createElement("option");
-    option.value = savedModelSelected;
-    option.text = savedModelSelected;
-    modelsSelectDropdown.add(option);
+    const opt = new Option(savedModelSelected, savedModelSelected);
+    modelsSelectDropdown.add(opt);
     modelsSelectDropdown.value = savedModelSelected;
   }
 
-  if (savedSystempPrompt)
-  {
-    systemPrompt = savedSystempPrompt;
-  }
-  
-  
-  if (savedDarkMode === 'true') {
-    body.classList.add('dark-mode');
-  }
+  if (savedDarkMode === 'true') body.classList.add('dark-mode');
 
-  
+  // ------------------------------
+  // SETTINGS PANEL TOGGLES
+  // ------------------------------
+  const toggleDisplay = el =>
+    el.style.display = (el.style.display === 'none' || !el.style.display)
+      ? 'flex'
+      : 'none';
+
   cloudSettingsButton.addEventListener('click', () => {
-   if (cloudSettingsContainer.style.display === 'none') {
-      cloudSettingsContainer.style.display = 'flex';
-      } else {
-      cloudSettingsContainer.style.display = 'none';
-      }   
-      toggleSettingsAside();
+    toggleDisplay(cloudSettingsContainer);
+    toggleSettingsAside();
   });
 
   cloudSettingsButtonClose.addEventListener('click', () => {
-    cloudSettingsContainer.style.display =
-      cloudSettingsContainer.style.display === 'none' ? 'flex' : 'none';
+    toggleDisplay(cloudSettingsContainer);
     toggleSettingsAside();
   });
-
-
-chatOptionsSaveButton.addEventListener('click', () => {
- const getOptions= options.getOptions();
-  options.saveOptions(getOptions);
-});
 
   appSettingsButton.addEventListener('click', () => {
-
-    if (appSettingsContainer.style.display === 'none') {
-      appSettingsContainer.style.display = 'flex';
+    toggleDisplay(appSettingsContainer);
+    if (appSettingsContainer.style.display === 'flex') {
       syspromptInput.value = localStorage.getItem('system-prompt');
-      guiSizeChange() ;
-      } else {
-      appSettingsContainer.style.display = 'none';
-      }
+      guiSizeChange();
+    }
     toggleSettingsAside();
-
   });
-  llmSettingsButton.addEventListener('click', () => {
 
-    if (llmSettingsContainer.style.display === 'none') {
+  llmSettingsButton.addEventListener('click', () => {
+    if (llmSettingsContainer.style.display === 'none' || !llmSettingsContainer.style.display) {
       loadModels();
       loadActiveModels();
-      llmSettingsContainer.style.display = 'flex';
-    } else {
-      llmSettingsContainer.style.display = 'none';
-     }
+    }
+    toggleDisplay(llmSettingsContainer);
     toggleSettingsAside();
   });
 
   llmSettingsButtonClose.addEventListener('click', () => {
-    llmSettingsContainer.style.display =
-      llmSettingsContainer.style.display === 'none' ? 'flex' : 'none';
-      
+    toggleDisplay(llmSettingsContainer);
     toggleSettingsAside();
   });
 
   appSettingsButtonClose.addEventListener('click', () => {
-    appSettingsContainer.style.display =
-      appSettingsContainer.style.display === 'none' ? 'flex' : 'none';
+    toggleDisplay(appSettingsContainer);
     toggleSettingsAside();
   });
-  
-  
-window.addEventListener('resize', () => {
-  guiSizeChange();
-});
 
 
-window.addEventListener('orientationchange', () => {
-  guiSizeChange();
-});
-  window.addEventListener('wheel', (event) => {
-  if (event.shiftKey || event.ctrlKey) {
-    
-  resize_textbox(); 
- 
-  }
-});
-  
-modelsSelectDropdown.addEventListener('change', (e) => {
-  const selectedValue = e.target.value;
- 
-    savedModelSelected = selectedValue;
+  // ------------------------------
+  // WINDOW EVENTS
+  // ------------------------------
+  window.addEventListener('resize', guiSizeChange);
+  window.addEventListener('orientationchange', guiSizeChange);
 
-    localStorage.setItem('modelSelected', selectedValue);
+  window.addEventListener('wheel', e => {
+    if (e.shiftKey || e.ctrlKey) resize_textbox();
   });
-  
+
+  // ------------------------------
+  // MODEL SELECT
+  // ------------------------------
+  modelsSelectDropdown.addEventListener('change', e => {
+    savedModelSelected = e.target.value;
+    localStorage.setItem('modelSelected', savedModelSelected);
+  });
+
+  // ------------------------------
+  // MESSAGE INPUT
+  // ------------------------------
   appSaveSysPromptButton.addEventListener('click', saveSystemPrompt);
-
   sendButton.addEventListener('click', runSend);
-
   saveSettingsButton.addEventListener('click', saveSettings);
-  messageInput.addEventListener('input', (event) => {
-  if ( messageInput.value  === '') {
-              messageInput.classList.add('normal');
-         messageInput.classList.remove('expanded');
-     
 
-        }
+  messageInput.addEventListener('input', () => {
+    if (messageInput.value === '') {
+      messageInput.classList.add('normal');
+      messageInput.classList.remove('expanded');
+    }
   });
-  messageInput.addEventListener('paste', function(event) {
-     
-  setTimeout(() => {
-     resize_textbox(); 
-     
-     
-  }, 100); 
-  
-  });
-  
-  messageInput.addEventListener('keypress', (event) => {
-    if (event.key === 'Enter') {
-      if (event.shiftKey || !SendOnEnter) {
-        
-        event.preventDefault();
-        
-                const cursorPosition = messageInput.selectionStart;
-        const textBeforeCursor = messageInput.value.substring(0, cursorPosition);
-        const textAfterCursor = messageInput.value.substring(cursorPosition, messageInput.value.length);
-        messageInput.value = textBeforeCursor + '\&#10;' + textAfterCursor;
-        messageInput.selectionStart = cursorPosition + 1;
-        messageInput.selectionEnd = cursorPosition + 1;
-        
+
+  messageInput.addEventListener('paste', () =>
+    setTimeout(resize_textbox, 100)
+  );
+
+  messageInput.addEventListener('keypress', e => {
+    if (e.key === 'Enter') {
+      if (e.shiftKey || !SendOnEnter) {
+        e.preventDefault();
+        const pos = messageInput.selectionStart;
+        messageInput.value =
+          messageInput.value.slice(0, pos) + '\n' + messageInput.value.slice(pos);
+        messageInput.selectionStart = messageInput.selectionEnd = pos + 1;
         resize_textbox();
       } else {
-        if(SendOnEnter)
-        {
-          
-          event.preventDefault();
-          runSend();
-        }
+        e.preventDefault();
+        runSend();
       }
     }
-      
   });
 
   loadActiveModels();
 });
 
-function resize_textbox() {
-   messageInput.style.height = '0px';
-        if(textarea.classList.contains('normal'))
-         {
-            messageInput.classList.add('expanded');
-            messageInput.classList.remove('normal');
-         }
-        messageInput.style.height = messageInput.scrollHeight + 'px';
 
+
+
+function URLadd(path, baseurl) {
+  if (baseurl.endsWith('/')) {
+    return baseurl + path.replace(/^\/+/, '');
+  } else {
+    return baseurl + '/' + path.replace(/^\/+/, '');
+  }
 }
 
-function runSend() {
 
-  if (!isSending) 
-  {
+// ------------------------------
+// TEXTBOX RESIZE
+// ------------------------------
+function resize_textbox() {
+  messageInput.style.height = '0px';
+
+  if (messageInput.classList.contains('normal')) {
+    messageInput.classList.add('expanded');
+    messageInput.classList.remove('normal');
+  }
+
+  messageInput.style.height = messageInput.scrollHeight + 'px';
+}
+
+
+// ------------------------------
+// SEND MESSAGE FLOW
+// ------------------------------
+function runSend() {
+  if (!isSending) {
     doSendMessage();
   }
 }
 
 async function doSendMessage() {
-  try{
-       isSending = true;
+  try {
+    isSending = true;
+    sendButton.textContent = 'Cancel';
+    showLoading();
 
-       
-       sendButton.textContent = 'Cancel';
+    await sendMessage();
 
-       showLoading()
-  
-       await sendMessage();
-    
-       if(!textarea.classList.contains('normal'))
-       {
-         messageInput.classList.add('normal');
-         messageInput.classList.remove('expanded');
-       }
-    
-       messageInput.value ="";
-     }
-     catch (error) {
-       console.error('Error sending message:', error);
-     } 
-     finally {
-       DoneSend();
-      }
+    if (!messageInput.classList.contains('normal')) {
+      messageInput.classList.add('normal');
+      messageInput.classList.remove('expanded');
+    }
+
+    messageInput.value = "";
+    resize_textbox();
+
+  } catch (error) {
+    console.error('Error sending message:', error);
+  } finally {
+    DoneSend();
+  }
 }
 
 function DoneSend() {
   isSending = false;
-  
   sendButton.textContent = 'Send';
-
   hideLoading();
 }
 
+
+// ------------------------------
+// LOADING INDICATORS
+// ------------------------------
 function showLoading() {
-  
   loadingIndicator.style.display = 'flex';
 }
 
 function hideLoading() {
-  
   loadingIndicator.style.display = 'none';
-
 }
 
 
+// ------------------------------
+// SAVE SETTINGS
+// ------------------------------
 function saveSettings() {
   localStorage.setItem('apiUrl', apiUrlInput.value);
   localStorage.setItem('clientId', clientIdInput.value);
   localStorage.setItem('clientSecret', clientSecretInput.value);
   localStorage.setItem('clientStream', !clientStreamInput.checked);
-  
-  options.saveOptions(currentOptions);
+
+  options.saveOptions(getCurrentOptions());
 
   systemPrompt = syspromptInput.value;
   resetConnection();
 }
-function saveSystemPrompt() {
-systemPrompt= syspromptInput.value;
- localStorage.setItem('system-prompt', systemPrompt); 
-}
 
 
-
-
-
-
+// ------------------------------
+// SETTINGS PANEL STATE
+// ------------------------------
 function toggleSettingsAside() {
-  if (cloudSettingsContainer.style.display === 'flex' ||
+  const anyOpen =
+    cloudSettingsContainer.style.display === 'flex' ||
     llmSettingsContainer.style.display === 'flex' ||
-    appSettingsContainer.style.display === 'flex') {
-    settingsAside.style.display = 'flex';
-  } else {
-    settingsAside.style.display = 'none';
-   } 
-  
-    if (cloudSettingsContainer.style.display === 'flex') {
-   cloudSettingsButton.classList.add('active'); 
-      } else {
-   cloudSettingsButton.classList.remove('active');
-      }   
-  
-     if (llmSettingsContainer.style.display === 'flex') {
-     llmSettingsButton.classList.add('active'); 
-    } else {
-     llmSettingsButton.classList.remove('active');
-     }
-     
-        if (appSettingsContainer.style.display === 'flex') {
-   appSettingsButton.classList.add('active'); 
-      } else {
-   appSettingsButton.classList.remove('active');
-      }
+    appSettingsContainer.style.display === 'flex';
+
+  settingsAside.style.display = anyOpen ? 'flex' : 'none';
+
+  cloudSettingsButton.classList.toggle(
+    'active',
+    cloudSettingsContainer.style.display === 'flex'
+  );
+
+  llmSettingsButton.classList.f(
+    'active',
+    llmSettingsContainer.style.display === 'flex'
+  );
+
+  appSettingsButton.classList.toggle(
+    'active',
+    appSettingsContainer.style.display === 'flex'
+  );
 }
+
+
+// secure-json-parse.js (browser version)
+(function () {
+  'use strict';
+
+  const suspectProtoRx = /"(?:_|\\u005[Ff])(?:_|\\u005[Ff])(?:p|\\u0070)(?:r|\\u0072)(?:o|\\u006[Ff])(?:t|\\u0074)(?:o|\\u006[Ff])(?:_|\\u005[Ff])(?:_|\\u005[Ff])"\s*:/;
+  const suspectConstructorRx = /"(?:c|\\u0063)(?:o|\\u006[Ff])(?:n|\\u006[Ee])(?:s|\\u0073)(?:t|\\u0074)(?:r|\\u0072)(?:u|\\u0075)(?:c|\\u0063)(?:t|\\u0074)(?:o|\\u006[Ff])(?:r|\\u0072)"\s*:/;
+
+  function filter(obj, { protoAction = 'error', constructorAction = 'error', safe } = {}) {
+    let next = [obj];
+
+    while (next.length) {
+      const nodes = next;
+      next = [];
+
+      for (const node of nodes) {
+        if (protoAction !== 'ignore' && Object.prototype.hasOwnProperty.call(node, '__proto__')) {
+          if (safe === true) return null;
+          if (protoAction === 'error') throw new SyntaxError('Object contains forbidden prototype property');
+          delete node.__proto__;
+        }
+
+        if (
+          constructorAction !== 'ignore' &&
+          Object.prototype.hasOwnProperty.call(node, 'constructor') &&
+          node.constructor !== null &&
+          typeof node.constructor === 'object' &&
+          Object.prototype.hasOwnProperty.call(node.constructor, 'prototype')
+        ) {
+          if (safe === true) return null;
+          if (constructorAction === 'error') throw new SyntaxError('Object contains forbidden prototype property');
+          delete node.constructor;
+        }
+
+        for (const key in node) {
+          const value = node[key];
+          if (value && typeof value === 'object') next.push(value);
+        }
+      }
+    }
+    return obj;
+  }
+
+  function _parse(text, reviver, options) {
+    if (options == null && reviver && typeof reviver === 'object') {
+      options = reviver;
+      reviver = undefined;
+    }
+
+    if (text && text.charCodeAt && text.charCodeAt(0) === 0xFEFF) {
+      text = text.slice(1);
+    }
+
+    const obj = JSON.parse(text, reviver);
+
+    if (obj === null || typeof obj !== 'object') return obj;
+
+    const protoAction = (options && options.protoAction) || 'error';
+    const constructorAction = (options && options.constructorAction) || 'error';
+
+    if (protoAction === 'ignore' && constructorAction === 'ignore') return obj;
+
+    if (protoAction !== 'ignore' && constructorAction !== 'ignore') {
+      if (!suspectProtoRx.test(text) && !suspectConstructorRx.test(text)) return obj;
+    } else if (protoAction !== 'ignore') {
+      if (!suspectProtoRx.test(text)) return obj;
+    } else {
+      if (!suspectConstructorRx.test(text)) return obj;
+    }
+
+    return filter(obj, { protoAction, constructorAction, safe: options && options.safe });
+  }
+
+  function safeParse(text, reviver) {
+    try {
+      return _parse(text, reviver, { safe: true });
+    } catch {
+      return undefined;
+    }
+  }
+
+  // expose globally
+  window.secureParse = safeParse;
+
+})();
+
+
+
+
+// Buffer for concatenated/partial JSON
+
+// Buffer for concatenated/partial JSON
+let streamBuffer = '';
+
+function extractJsonObjectsFromBuffer() {
+  const results = [];
+  let depth = 0, start = -1;
+  for (let i = 0; i < streamBuffer.length; i++) {
+    const ch = streamBuffer[i];
+    if (ch === '{') { if (start === -1) start = i; depth++; }
+    else if (ch === '}') {
+      depth = Math.max(0, depth - 1);
+      if (depth === 0 && start !== -1) { results.push(streamBuffer.slice(start, i + 1)); start = -1; }
+    }
+  }
+  if (results.length) {
+    const last = results[results.length - 1];
+    const lastIndex = streamBuffer.indexOf(last) + last.length;
+    streamBuffer = streamBuffer.slice(lastIndex);
+  }
+  return results;
+}
+
+/* Bubble helpers */
+function showThinkingBubble(text) {
+  const bubble = document.getElementById('thinking-bubble');
+  const txt = document.getElementById('thinking-bubble-text');
+  if (!bubble || !txt) return;
+  txt.textContent = text || '';
+  bubble.classList.add('visible');
+  bubble.setAttribute('aria-hidden', 'false');
+}
+function updateThinkingBubble(text) {
+  const txt = document.getElementById('thinking-bubble-text');
+  if (!txt) return;
+  txt.textContent = (txt.textContent || '') + text;
+}
+function hideThinkingBubble() {
+  const bubble = document.getElementById('thinking-bubble');
+  if (!bubble) return;
+  bubble.classList.remove('visible');
+  bubble.setAttribute('aria-hidden', 'true');
+}
+
+/* Detect thinking vs content */
+function detectThinkingState(obj) {
+  const msg = obj && obj.message ? obj.message : null;
+  if (msg && typeof msg.thinking === 'string' && msg.thinking !== '') return { state: 'THINKING', text: msg.thinking };
+  if (msg && typeof msg.content === 'string' && msg.content !== '') return { state: 'DONE_THINKING' };
+  if (typeof obj.response === 'string' && obj.response !== '') return { state: 'DONE_THINKING' };
+  return null;
+}
+
+
+/* Append assistant text to chat (replace with your renderer) */
+function appendAssistantText(text) {
+  const chat = document.getElementById('chat-body');
+  if (!chat) return;
+  const el = document.createElement('div');
+  el.className = 'ai-bubble';
+  el.textContent = text;
+  chat.appendChild(el);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+/* Main per-chunk handler: call this for each raw chunk from your stream */
+function handleRawStreamChunk(rawChunk) {
+  streamBuffer += rawChunk;
+  const jsonStrings = extractJsonObjectsFromBuffer();
+  for (const js of jsonStrings) {
+    const obj = safeJsonParse(js);
+    if (!obj) continue;
+    const status = detectThinkingState(obj);
+    if (status && status.state === 'THINKING') {
+      const txtEl = document.getElementById('thinking-bubble-text');
+      if (!txtEl || txtEl.textContent === '') showThinkingBubble(status.text);
+      else updateThinkingBubble(status.text);
+      continue;
+    }
+    if (status && status.state === 'DONE_THINKING') hideThinkingBubble();
+    const text = extractContent(obj);
+    if (text) appendAssistantText(text);
+  }
+}
+
+/* Optional: quick test (remove in production) */
+// setTimeout(() => {
+//   const chunks = ['{"message":{"thinking":"We"}}','{"message":{"thinking":" need"}}','{"message":{"thinking":" to"}}','{"message":{"thinking":" respond"}}','{"message":{"content":"Hello world!"}}'];
+//   let i=0; const t=setInterval(()=>{ handleRawStreamChunk(chunks[i]); i++; if(i>=chunks.length) clearInterval(t); },150);
+// }, 300);
+
+
+
 </script>
+
+
+
+
+
+
+
+
+
+
+
+
 </html>
