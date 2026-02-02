@@ -446,7 +446,7 @@ footer {
   <div id="settings-panel" class="settings-panel" style="display:none;">
 
     <!-- App Settings -->
-    <div id="app-settings-container" class="settings-group hidden">
+    <div id="app-settings-container" class="settings-group hidden" style="display:none;">
       <h2>App Settings</h2>
       <form id="app-settings-form">
         <p>Screen Height: <span id="screen-height-value"></span></p>
@@ -465,37 +465,27 @@ footer {
     </div>
 
     <!-- Cloud Settings -->
-<div id="cloud-settings-container" class="settings-group hidden" style="display:none;">
-  <h2>Cloud Settings</h2>
+    <div id="cloud-settings-container" class="settings-group hidden" style="display:none;">
+      <h2>Cloud Settings</h2>
+      <form id="cloud-settings-form">
+        <label for="api-url">API URL:</label>
+        <input type="text" id="api-url" name="api-url">
 
-  <form id="cloud-settings-form" class="stacked-form">
-    <div class="form-row">
-      <label for="api-url">API URL</label>
-      <input type="text" id="api-url" name="api-url" />
+        <label for="client-id">Client ID:</label>
+        <input type="text" id="client-id" name="client-id">
+
+        <label for="client-secret">Client Secret:</label>
+        <input type="text" id="client-secret" name="client-secret">
+
+        <label for="client-stream">Client Stream:</label>
+        <input type="checkbox" id="client-stream" value="true" checked>
+      </form>
+
+      <div class="button-container">
+        <button id="save-settings-button" class="button-save">&#128190; Save</button>
+        <button id="cloud-settings-button-close" class="button-close">&#9194; Close</button>
+      </div>
     </div>
-
-    <div class="form-row">
-      <label for="client-id">Client ID</label>
-      <input type="text" id="client-id" name="client-id" />
-    </div>
-
-    <div class="form-row">
-      <label for="client-secret">Client Secret</label>
-      <input type="text" id="client-secret" name="client-secret" />
-    </div>
-
-    <div class="form-row form-row-inline">
-      <label for="client-stream">Client Stream</label>
-      <input type="checkbox" id="client-stream" name="client-stream" value="true" checked />
-    </div>
-  </form>
-
-  <div class="button-container">
-    <button id="save-settings-button" class="button-save">💾 Save</button>
-    <button id="cloud-settings-button-close" class="button-close">⤺ Close</button>
-  </div>
-</div>
-
 
     <!-- LLM Settings -->
     <div id="llm-settings-container" class="settings-group hidden" style="display:none;">
