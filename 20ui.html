@@ -372,8 +372,22 @@ footer {
   </div>
 </body>
 
+<script type="module" src="path/to/your-script.js"></script>
 
 <script>
+
+import secureJsonParse from './secure-json-parse.js';
+// Prefer imported secure parser; fallback to local safeJsonParse
+let secureParse = null;
+try {
+  // If secure-json-parse.js exports default or named, adapt accordingly.
+  // If using bundler/ESM, ensure `import secureJsonParse from './secure-json-parse.js'` is at top-level.
+  secureParse = (typeof secureJsonParse === 'function') ? secureJsonParse : null;
+} catch (e) {
+  secureParse = null;
+}
+
+
 
 
 // DOM references
@@ -617,8 +631,113 @@ async function sendMessage() {
   await p(chatMessage, res, payload.stream);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Fallback safe JSON parse (reviver strips dangerous keys).
+ * Uses imported secureParse when available.
+ *
+ * @param {string} text
+ * @returns {object|null}
+ */
+function safeJsonParse(text) {
+  if (typeof text !== 'string') return null;
+  if (secureParse) {
+    try { return secureParse(text); } catch (e) { /* fall through to local */ }
+  }
+  try {
+    return JSON.parse(text, (k, v) => {
+      if (k === '__proto__' || k === 'constructor' || k === 'prototype') return undefined;
+      if (typeof v === 'function') return undefined;
+      return v;
+    });
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Decode only the explicit escape sequences expected from the LLM stream.
+ * Keeps decoding conservative to avoid turning text into HTML.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+function replaceCharEncodings(text) {
+  if (typeof text !== 'string') return '';
+  const map = {
+    '\\&#10;': '\n',
+    '\\&#13;': '\r',
+    '\\u003c': '<',
+    '\\u003e': '>',
+    '\\u0026': '&',
+    '\\u0027': "'"
+  };
+  return text.replace(/\\u[0-9a-fA-F]{4}|\\&#10;|\\&#13;/g, m => {
+    if (m.startsWith('\\u')) {
+      const hex = m.slice(2);
+      if (/^[0-9a-fA-F]{4}$/.test(hex)) return String.fromCharCode(parseInt(hex, 16));
+      return m;
+    }
+    return map[m] || m;
+  });
+}
+
+/**
+ * Minimal sanitizer for textContent insertion.
+ * Removes control chars and a few risky punctuation characters.
+ *
+ * @param {string} s
+ * @returns {string}
+ */
+function sanitizeText(s) {
+  if (typeof s !== 'string') return '';
+  return s.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F`{}<>]/g, '');
+}
+
+/**
+ * Safe extractor: parse JSON fragment and return the content string (decoded + sanitized).
+ * Accepts JSON string or object. Returns null if no valid content found.
+ *
+ * Expected shapes:
+ *  - {"content":"..."}
+ *  - {"delta":{"content":"..."}}
+ *
+ * @param {string|object} fragment
+ * @returns {string|null}
+ */
+function extractContent(fragment) {
+  let obj = fragment;
+  if (typeof fragment === 'string') {
+    obj = safeJsonParse(fragment);
+    if (!obj) return null;
+  }
+
+  const content =
+    (obj && typeof obj.content === 'string' && obj.content) ||
+    (obj && obj.delta && typeof obj.delta.content === 'string' && obj.delta.content) ||
+    null;
+
+  if (!content) return null;
+
+  const decoded = replaceCharEncodings(content);
+  return sanitizeText(decoded);
+}
+
 /* ------------------------------
-   PROCESS RESPONSE
+   PROCESS RESPONSE (improved, non-destructive)
 --------------------------------*/
 async function p(chatMessage, res, isStream) {
   try {
@@ -627,27 +746,35 @@ async function p(chatMessage, res, isStream) {
 
     const bubble = createBubble("ai", "");
 
-    if (isStream) {
+    if (isStream && res && res.body && typeof res.body.getReader === 'function') {
       const reader = res.body.getReader();
-      const processor = new StreamingJsonProcessor();
-      let partial = "";
-
+      const processor = new StreamingJsonProcessor(); // keep existing processor class
+      // Note: StreamingJsonProcessor maintains its own internal buffer.
+      // We pass each chunk to it and let it manage partial fragments.
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        partial += new TextDecoder().decode(value);
-        const chunks = processor.processChunk(partial);
-        partial = "";
+        const chunk = new TextDecoder().decode(value);
+        // Pass only the new chunk to the processor; do NOT reset processor.buffer here.
+        const contents = processor.processChunk(chunk);
 
-        chunks.forEach(content => {
-          bubble.textContent += replaceCharEncodings(content);
+        // processor.processChunk returns an array of raw content strings (previously via extractContent).
+        // We now ensure each content is decoded and sanitized (extractContent already does that if processor uses extractContent).
+        // But to be safe, run replaceCharEncodings + sanitizeText here as well.
+        for (const raw of contents) {
+          if (!raw) continue;
+          const safe = sanitizeText(replaceCharEncodings(raw));
+          bubble.textContent += safe;
           resizePre(bubble);
           ChatAreaContainer.scrollTo({ top: ChatAreaContainer.scrollHeight, behavior: 'smooth' });
-        });
+        }
       }
     } else {
-      bubble.textContent += "\n" + await res.text();
+      // Non-stream fallback: treat response as text (decode + sanitize)
+      const text = await res.text();
+      bubble.textContent += "\n" + sanitizeText(replaceCharEncodings(String(text)));
+      resizePre(bubble);
     }
 
     messageInput.focus();
@@ -656,108 +783,6 @@ async function p(chatMessage, res, isStream) {
   }
 }
 
-/* ------------------------------
-   STREAMING JSON PROCESSOR
---------------------------------*/
-class StreamingJsonProcessor {
-  constructor() {
-    this.buffer = "";
-  }
-
-  processChunk(chunk) {
-    this.buffer += chunk;
-    const out = [];
-
-    while (true) {
-      const end = this.findNextJsonEndIndex(this.buffer);
-      if (end === -1) break;
-
-      const jsonString = this.sanitizeJson(this.buffer.slice(0, end));
-      try {
-        const content = extractContent(jsonString);
-        if (content) out.push(content);
-      } catch (e) {
-        console.error("JSON parse error:", e);
-      }
-
-      this.buffer = this.buffer.slice(end);
-    }
-
-    return out;
-  }
-
-  findNextJsonEndIndex(str) {
-    let depth = 0;
-    let inString = false;
-
-    for (let i = 0; i < str.length; i++) {
-      const c = str[i];
-
-      if (c === '"' && str[i - 1] !== '\\') inString = !inString;
-      if (!inString) {
-        if (c === '{' || c === '[') depth++;
-        if (c === '}' || c === ']') depth--;
-        if (depth === 0) return i + 1;
-      }
-    }
-    return -1;
-  }
-
-  sanitizeJson(str) {
-    return str.trim().replace(/,\s*([\]}])/g, '$1');
-  }
-}
-
-
-
-
-
-
-
-/**
- * Extract the content from a JSON string.
- *
- * @param {string} jsonString
- * @returns {string|null}
- */
-
-
-function extractContent(jsonString) {
-
-  if (!jsonString.endsWith(',"done":false}')) {
-     return "";
-  }
-  
-  let startMarker = '"content":';
-  let endMarker = ',"done":'; 
-
-  let startIndex = jsonString.indexOf(startMarker);
-  if (startIndex === -1) {
-    return null; 
-  }
-
-  startIndex += startMarker.length+1;
-
-  let endIndex = jsonString.indexOf(endMarker, startIndex);
-  if (endMarker === '}' && endIndex === -1) {
-      endIndex = jsonString.lastIndexOf('}');
-      if (endIndex === -1) return null;
-  } else if (endIndex === -1) {
-    return null; 
-  }
-  
-  let content = jsonString.substring(startIndex, endIndex-2);
-
-  return content;
-}
-
-function URLadd(path, baseurl) {
-  if (baseurl.endsWith('/')) {
-    return baseurl + path.replace(/^\/+/, '');
-  } else {
-    return baseurl + '/' + path.replace(/^\/+/, '');
-  }
-}
 
 
 
@@ -766,185 +791,6 @@ function URLadd(path, baseurl) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-/**
- * Safely parse JSON text into a plain object while preventing prototype pollution.
- * - Rejects non-string input.
- * - Uses JSON.parse with a reviver to strip dangerous keys.
- * - Returns null on parse error.
- *
- * @param {string} text
- * @returns {object|null}
- */
-function safeJsonParse(text) {
-  if (typeof text !== 'string') return null;
-  try {
-    // Reviver removes dangerous keys and ensures plain objects/arrays only
-    return JSON.parse(text, (key, value) => {
-      if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
-        return undefined;
-      }
-      // Disallow functions or other non-serializable types
-      if (typeof value === 'function') return undefined;
-      return value;
-    });
-  } catch (e) {
-    console.warn('safeJsonParse: invalid JSON', e);
-    return null;
-  }
-}
-
-/**
- * Strict text sanitizer for insertion into textContent.
- * - Removes control characters and a small set of punctuation that could be used in injection contexts.
- * - Keeps normal punctuation and whitespace.
- *
- * @param {string} text
- * @returns {string}
- */
-function sanitizeText(text) {
-  if (typeof text !== 'string') return '';
-  // Remove null bytes and control characters except newline and tab
-  // Also remove backticks and curly braces which are sometimes used in templating attacks
-  return text.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F`{}<>]/g, '');
-}
-
-/**
- * Escape text for safe display if you ever need to use innerHTML (not recommended).
- * Prefer using textContent with sanitizeText instead.
- *
- * @param {string} str
- * @returns {string}
- */
-function escapeForHTML(str) {
-  if (typeof str !== 'string') return '';
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-/**
- * Decode a small, controlled set of escape sequences returned by the LLM stream.
- * - Only decodes explicit patterns we expect.
- * - Validates \uXXXX sequences before decoding.
- *
- * @param {string} text
- * @returns {string}
- */
-function replaceCharEncodings(text) {
-  if (typeof text !== 'string') return '';
-
-  const charMap = {
-    '\\&#10;': '\n',
-    '\\&#13;': '\r',
-    '\\u003c': '<',
-    '\\u003e': '>',
-    '\\u0026': '&',
-    '\\u0027': "'"
-  };
-
-  return text.replace(/\\u[0-9a-fA-F]{4}|\\&#10;|\\&#13;/g, match => {
-    if (match.startsWith('\\u')) {
-      const hex = match.slice(2);
-      if (/^[0-9a-fA-F]{4}$/.test(hex)) {
-        return String.fromCharCode(parseInt(hex, 16));
-      }
-      return match;
-    }
-    return charMap[match] || match;
-  });
-}
-
-/**
- * Safely extract the 'content' field from a streaming JSON fragment.
- * - Accepts either a JSON string or an already-parsed object.
- * - Uses safeJsonParse to avoid prototype pollution.
- * - Returns sanitized text or null if nothing valid found.
- *
- * Expected fragment shapes (examples):
- *  - '{"content":"..."}'
- *  - '{"delta":{"content":"..."}}'
- *
- * @param {string|object} fragment
- * @returns {string|null}
- */
-function extractContentSafe(fragment) {
-  let obj = fragment;
-  if (typeof fragment === 'string') {
-    obj = safeJsonParse(fragment);
-    if (!obj) return null;
-  }
-
-  // Support nested shapes commonly used by streaming LLMs
-  const content =
-    (obj && typeof obj.content === 'string' && obj.content) ||
-    (obj && obj.delta && typeof obj.delta.content === 'string' && obj.delta.content) ||
-    null;
-
-  if (!content) return null;
-
-  // Decode known escapes, then sanitize for safe text insertion
-  const decoded = replaceCharEncodings(content);
-  return sanitizeText(decoded);
-}
-
-/* ---------------------------
-   Integration hint for StreamingJsonProcessor
-   Replace calls to extractContent(jsonString) with extractContentSafe(jsonString)
-   and then assign the returned string to bubble.textContent (safe).
-   Example usage inside your streaming loop:
-
-   const jsonString = ...; // chunked string
-   const content = extractContentSafe(jsonString);
-   if (content) {
-     bubble.textContent += content;
-   }
-
-   This ensures streaming fragments are parsed safely and sanitized.
-----------------------------*/
-
-/* Example small wrapper to parse and return content array from a buffer string.
-   This mirrors the previous extractContent usage but uses safe parsing.
-*/
-function extractMultipleContentsFromBuffer(bufferStr) {
-  // Attempt to split by newline-delimited JSON or by object boundaries.
-  // Keep this conservative: only attempt to parse complete JSON objects.
-  const results = [];
-  // Quick heuristic: find top-level JSON objects by scanning for balanced braces.
-  let depth = 0, start = -1, inString = false, prevChar = '';
-  for (let i = 0; i < bufferStr.length; i++) {
-    const ch = bufferStr[i];
-    if (ch === '"' && prevChar !== '\\') inString = !inString;
-    if (!inString) {
-      if (ch === '{') {
-        if (depth === 0) start = i;
-        depth++;
-      } else if (ch === '}') {
-        depth--;
-        if (depth === 0 && start !== -1) {
-          const candidate = bufferStr.slice(start, i + 1);
-          const content = extractContentSafe(candidate);
-          if (content) results.push(content);
-          start = -1;
-        }
-      }
-    }
-    prevChar = ch;
-  }
-  return results;
-}
 
 
 
@@ -1116,6 +962,9 @@ let systemPrompt = savedSystempPrompt;
 loadLayout();
 
 
+saveOptions(options) {
+  localStorage.setItem('options', JSON.stringify(options));
+}
 
 document.addEventListener('DOMContentLoaded', () => {
 
