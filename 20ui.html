@@ -382,6 +382,28 @@ footer {
   <!-- Chat Body -->
   <div class="chat-body-container" id="chat-body-container">
     <div class="chat-body" id="chat-body"></div>
+<div id="thinking-bubble" style="
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  max-width: 260px;
+  padding: 10px 14px;
+  background: rgba(0,0,0,0.75);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+  display: none;
+  z-index: 9999;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+">
+  <strong>Thinking…</strong>
+  <div id="thinking-bubble-text"></div>
+</div>
+
+
   </div>
 
   <!-- Input Section -->
@@ -457,6 +479,67 @@ footer {
 </body>
 <!-- remove the other module tag or combine files -->
 <script type="module">
+
+function showThinkingBubble(text) {
+  const bubble = document.getElementById('thinking-bubble');
+  const txt = document.getElementById('thinking-bubble-text');
+
+  txt.textContent = text || "";
+  bubble.style.display = 'block';
+}
+
+function hideThinkingBubble() {
+  const bubble = document.getElementById('thinking-bubble');
+  bubble.style.display = 'none';
+}
+
+function detectThinking(obj) {
+  const msg = obj.message || {};
+
+  if (typeof msg.thinking === "string" && msg.thinking.trim() !== "") {
+    return { state: "THINKING", text: msg.thinking };
+  }
+
+  if (typeof msg.content === "string" && msg.content.trim() !== "") {
+    return { state: "DONE_THINKING" };
+  }
+
+  return null;
+}
+
+function handleStreamChunk(jsonString) {
+  const obj = safeJsonParse(jsonString);
+  if (!obj) return;
+
+  const thinking = detectThinking(obj);
+
+  // --- THINKING MODE ---
+  if (thinking && thinking.state === "THINKING") {
+    showThinkingBubble(thinking.text);
+    return; // do NOT output to chat yet
+  }
+
+  // --- DONE THINKING ---
+  if (thinking && thinking.state === "DONE_THINKING") {
+    hideThinkingBubble();
+    // continue to extract content normally
+  }
+
+  // --- NORMAL CONTENT ---
+  const text = extractContent(obj);
+  if (!text) return;
+
+  appendAssistantText(text); // your existing bubble renderer
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -911,6 +994,7 @@ function extractContent(fragment) {
   const decoded = replaceCharEncodings(content);
   return sanitizeText(decoded);
 }
+
 
 
 
