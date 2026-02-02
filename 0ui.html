@@ -1471,7 +1471,7 @@ function toggleSettingsAside() {
     cloudSettingsContainer.style.display === 'flex'
   );
 
-  llmSettingsButton.classList.f(
+  llmSettingsButton.classList.toggle(
     'active',
     llmSettingsContainer.style.display === 'flex'
   );
@@ -1657,24 +1657,7 @@ function handleRawStreamChunk(rawChunk) {
   }
 }
 
-/* Optional: quick test (remove in production) */
-// setTimeout(() => {
-//   const chunks = ['{"message":{"thinking":"We"}}','{"message":{"thinking":" need"}}','{"message":{"thinking":" to"}}','{"message":{"thinking":" respond"}}','{"message":{"content":"Hello world!"}}'];
-//   let i=0; const t=setInterval(()=>{ handleRawStreamChunk(chunks[i]); i++; if(i>=chunks.length) clearInterval(t); },150);
-// }, 300);
-
-
-
 </script>
-
-
-
-
-
-
-
-
-
 
 
 
