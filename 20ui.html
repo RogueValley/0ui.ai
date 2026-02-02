@@ -885,15 +885,16 @@ function sanitizeText(s) {
 function extractContent(fragment) {
   let obj = fragment;
 
-  // Parse if string
   if (typeof fragment === 'string') {
     obj = safeJsonParse(fragment);
     if (!obj || typeof obj !== 'object') return null;
   }
 
   const content =
-    (obj && typeof obj.content === 'string' && obj.content) ||
-    (obj && obj.delta && typeof obj.delta.content === 'string' && obj.delta.content) ||
+    (typeof obj.response === 'string' && obj.response) ||
+    (obj.delta && typeof obj.delta.response === 'string' && obj.delta.response) ||
+    (typeof obj.content === 'string' && obj.content) ||
+    (obj.delta && typeof obj.delta.content === 'string' && obj.delta.content) ||
     null;
 
   if (!content) return null;
@@ -901,6 +902,7 @@ function extractContent(fragment) {
   const decoded = replaceCharEncodings(content);
   return sanitizeText(decoded);
 }
+
 
 
 
