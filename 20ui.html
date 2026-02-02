@@ -885,15 +885,24 @@ function sanitizeText(s) {
 function extractContent(fragment) {
   let obj = fragment;
 
+  // Parse if string
   if (typeof fragment === 'string') {
     obj = safeJsonParse(fragment);
     if (!obj || typeof obj !== 'object') return null;
   }
 
+  // NEW: support your actual schema
+  const msg = obj.message || {};
+
+  // Ignore "thinking" tokens
+  if (typeof msg.thinking === 'string' && msg.thinking.trim() !== '') {
+    return null;
+  }
+
+  // Extract actual assistant output
   const content =
+    (typeof msg.content === 'string' && msg.content) ||
     (typeof obj.response === 'string' && obj.response) ||
-    (obj.delta && typeof obj.delta.response === 'string' && obj.delta.response) ||
-    (typeof obj.content === 'string' && obj.content) ||
     (obj.delta && typeof obj.delta.content === 'string' && obj.delta.content) ||
     null;
 
@@ -902,6 +911,7 @@ function extractContent(fragment) {
   const decoded = replaceCharEncodings(content);
   return sanitizeText(decoded);
 }
+
 
 
 
