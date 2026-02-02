@@ -443,7 +443,7 @@ footer {
   </footer>
 
   <!-- Settings Panel -->
-  <div id="settings-panel" class="settings-panel">
+  <div id="settings-panel" class="settings-panel" style="display:none;">
 
     <!-- App Settings -->
     <div id="app-settings-container" class="settings-group hidden">
@@ -465,7 +465,7 @@ footer {
     </div>
 
     <!-- Cloud Settings -->
-    <div id="cloud-settings-container" class="settings-group hidden">
+    <div id="cloud-settings-container" class="settings-group hidden" style="display:none;">
       <h2>Cloud Settings</h2>
       <form id="cloud-settings-form">
         <label for="api-url">API URL:</label>
@@ -488,7 +488,7 @@ footer {
     </div>
 
     <!-- LLM Settings -->
-    <div id="llm-settings-container" class="settings-group hidden">
+    <div id="llm-settings-container" class="settings-group hidden" style="display:none;">
       <h2>LLM Settings</h2>
 
       <label for="models-select">Select Model:</label>
@@ -1471,7 +1471,7 @@ function toggleSettingsAside() {
     cloudSettingsContainer.style.display === 'flex'
   );
 
-  llmSettingsButton.classList.toggle(
+  llmSettingsButton.classList.f(
     'active',
     llmSettingsContainer.style.display === 'flex'
   );
