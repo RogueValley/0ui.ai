@@ -574,9 +574,6 @@ async function loadActiveModels() {
     if (!res.ok) throw new Error("Bad response");
 
     const models = await res.json();
-    if (!Array.isArray(models.models) || models.models.length === 0) {
-      throw new Error("Invalid model list");
-    }
 
     let selected = models.models[0].name;
     if (selected === "[EMPTY]") throw new Error("Empty model list");
