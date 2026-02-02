@@ -362,7 +362,45 @@ footer {
 }
 .hidden {
   display: none;
-}</style>
+}
+
+
+.chat-body-container {
+  position: relative;
+}
+
+
+/* Thinking bubble overlay */
+.thinking-bubble {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  max-width: 260px;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+  display: none; /* hidden by default */
+  z-index: 9999;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  animation: thinkingFadeIn 0.15s ease-out;
+}
+
+/* Optional subtle fade-in */
+@keyframes thinkingFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+
+
+
+
+</style>
 
 
 <body>
@@ -380,28 +418,15 @@ footer {
   </div>
 
   <!-- Chat Body -->
-  <div class="chat-body-container" id="chat-body-container">
-    <div class="chat-body" id="chat-body"></div>
-<div id="thinking-bubble" style="
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  max-width: 260px;
-  padding: 10px 14px;
-  background: rgba(0,0,0,0.75);
-  color: #fff;
-  border-radius: 10px;
-  font-size: 14px;
-  line-height: 1.4;
-  display: none;
-  z-index: 9999;
-  pointer-events: none;
-  backdrop-filter: blur(4px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-">
-  <strong>Thinking…</strong>
-  <div id="thinking-bubble-text"></div>
+<div class="chat-body-container" id="chat-body-container">
+  <div class="chat-body" id="chat-body"></div>
+
+  <div id="thinking-bubble" class="thinking-bubble">
+    <strong>Thinking…</strong>
+    <div id="thinking-bubble-text"></div>
+  </div>
 </div>
+
 
 
   </div>
