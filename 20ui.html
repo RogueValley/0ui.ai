@@ -1014,57 +1014,83 @@ function sanitizeText(s) {
   if (typeof input !== 'string') return '';
 
   // Normalize to NFC to avoid weird combining sequences
+  try { input = input.normalize('NFC'); } catch (e) { /* ignore if not supported */ }
+
+  // Remove BOM and explicit bidi / isolate / format characters that can be abused
+  input = input.replace(/[\uFEFF\u202A-\u202E\u2066-\u2069\u200B\u200C\u200D\u2060\u180E]/g, '');
+
+  // Remove Unicode noncharacters U+FDD0..U+FDEF and BMP noncharacters U+FFFE/U+FFFF
+  input = input.replace(/[\uFDD0-\uFDEF\uFFFE\uFFFF]/g, '');
+
+  // Remove other control characters except \n \r \t (0x09,0x0A,0x0D)
+  // We'll use a negative approach below to remove anything not allowed.
+
+  // If environment supports Unicode property escapes, use a single inverse replace:
   try {
-    input = input.normalize('NFC');
+    // Allowed: \p{L}\p{N}\p{P}\p{S}\p{M}\p{Zs} plus \n \r \t
+    const disallowed = /[^\p{L}\p{N}\p{P}\p{S}\p{M}\p{Zs}\n\r\t]/gu;
+    input = input.replace(disallowed, '');
+    // Collapse repeated newlines/tabs to reasonable amounts
+    input = input.replace(/\r\n|\r/g, '\n');
+    input = input.replace(/\t{2,}/g, '\t');
+    input = input.replace(/\n{3,}/g, '\n\n');
+    return input;
   } catch (e) {
-    // ignore if normalize not supported
+    // Fallback for older browsers without \p{} support
   }
 
-  // Remove BOM and explicit bidi / format characters that can be abused
-  // U+FEFF BOM, U+202A..U+202E (LRE/RLE/LRO/RLO/POP), U+2066..U+2069 (isolate controls)
-  // plus other explicit format characters often used for spoofing
-  input = input.replace(/[\uFEFF\u202A-\u202E\u2066-\u2069]/g, '');
+  // Fallback approach: keep printable ASCII, common Latin-1, whitespace, and surrogate pairs (emoji)
+  // Keep: 0x20-0x7E (printable ASCII), 0xA0-0xFF (Latin-1 supplement), newline, CR, tab
+  // Also preserve surrogate pairs (high surrogate 0xD800–0xDBFF followed by low surrogate 0xDC00–0xDFFF)
+  // and common punctuation beyond ASCII by allowing U+2000–U+2FFF block ranges conservatively.
+  // This fallback is intentionally permissive for common use-cases (emoji, code, markdown).
+  const fallback = [];
+  for (let i = 0; i < input.length; i++) {
+    const code = input.charCodeAt(i);
 
-  // Remove Unicode noncharacters and the FDD0..FDEF range
-  // Also remove codepoints ending in FFFE/FFFF in BMP and supplementary planes
-  // This covers U+FDD0–U+FDEF and any U+xxFFFE/U+xxFFFF
-  input = input.replace(/[\uFDD0-\uFDEF]/g, '');
-  input = input.replace(/[\uFFFE\uFFFF]/g, '');
-  // Remove supplementary-plane noncharacters (match surrogate pairs that end with FFFE/FFFF)
-  input = input.replace(/[\uD8\uDB][\uDC-\uDF][\uFFFE\uFFFF]/g, ''); // defensive, though rare
+    // surrogate pair handling: if high surrogate and next is low surrogate, keep both
+    if (code >= 0xD800 && code <= 0xDBFF && i + 1 < input.length) {
+      const next = input.charCodeAt(i + 1);
+      if (next >= 0xDC00 && next <= 0xDFFF) {
+        fallback.push(input[i], input[i + 1]);
+        i++; // skip low surrogate
+        continue;
+      }
+    }
 
-  // Remove other invisible/formatting characters that are not safe for display:
-  // Category Cf (format) minus a few safe ones; we'll explicitly remove common problematic ones:
-  // U+200B ZERO WIDTH SPACE, U+200C ZERO WIDTH NON-JOINER, U+200D ZERO WIDTH JOINER,
-  // U+2060 WORD JOINER, U+180E MONGOLIAN VOWEL SEPARATOR (deprecated)
-  input = input.replace(/[\u200B\u200C\u200D\u2060\u180E]/g, '');
+    // Allow printable ASCII
+    if (code >= 0x20 && code <= 0x7E) {
+      fallback.push(input[i]);
+      continue;
+    }
 
-  // Allowed character classes:
-  // \p{L} = letters
-  // \p{N} = numbers
-  // \p{P} = punctuation (keeps Markdown and code punctuation)
-  // \p{S} = symbols (keeps emoji and other symbols)
-  // \p{M} = combining marks (accent marks)
-  // \p{Zs} = space separators (regular spaces)
-  // plus explicit allow of \n \r \t
-  // The 'u' flag enables Unicode property escapes.
-  const allowedRe = /[\p{L}\p{N}\p{P}\p{S}\p{M}\p{Zs}\n\r\t]/gu;
+    // Allow common Latin-1 supplement
+    if (code >= 0xA0 && code <= 0xFF) {
+      fallback.push(input[i]);
+      continue;
+    }
 
-  // Build sanitized string by keeping only allowed characters
-  const parts = input.match(allowedRe);
-  if (!parts) return '';
+    // Allow whitespace: newline, CR, tab
+    if (code === 0x0A || code === 0x0D || code === 0x09) {
+      fallback.push(input[i]);
+      continue;
+    }
 
-  // Join and trim trailing control whitespace that might be accidental
-  let out = parts.join('');
+    // Allow many punctuation/symbol ranges (conservative)
+    if ((code >= 0x2000 && code <= 0x2FFF) || (code >= 0x3000 && code <= 0x303F)) {
+      fallback.push(input[i]);
+      continue;
+    }
 
-  // Collapse excessive consecutive control whitespace (optional)
-  out = out.replace(/\r\n|\r/g, '\n');       // normalize CRLF/CR to LF
-  out = out.replace(/\t+/g, '\t');          // collapse tabs
-  out = out.replace(/\n{3,}/g, '\n\n');     // limit consecutive newlines to 2
+    // Otherwise drop the character (control, private-use, noncharacter, etc.)
+  }
 
+  let out = fallback.join('');
+  out = out.replace(/\r\n|\r/g, '\n');
+  out = out.replace(/\t{2,}/g, '\t');
+  out = out.replace(/\n{3,}/g, '\n\n');
   return out;
 }
-
 
 /**
  * Extracts content from a JSON fragment.
