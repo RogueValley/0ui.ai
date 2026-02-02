@@ -371,21 +371,12 @@ footer {
 
   </div>
 </body>
+<!-- remove the other module tag or combine files -->
+<script type="module">
+  import secureJsonParse from './secure-json-parse.js';
 
-<script type="module" src="path/to/your-script.js"></script>
-
-<script>
-
-import secureJsonParse from './secure-json-parse.js';
-// Prefer imported secure parser; fallback to local safeJsonParse
-let secureParse = null;
-try {
-  // If secure-json-parse.js exports default or named, adapt accordingly.
-  // If using bundler/ESM, ensure `import secureJsonParse from './secure-json-parse.js'` is at top-level.
-  secureParse = (typeof secureJsonParse === 'function') ? secureJsonParse : null;
-} catch (e) {
-  secureParse = null;
-}
+  // your code that uses secureJsonParse
+  const secureParse = typeof secureJsonParse === 'function' ? secureJsonParse : null;
 
 
 
@@ -961,12 +952,61 @@ let systemPrompt = savedSystempPrompt;
 
 loadLayout();
 
+/**
+ * Persist options to localStorage safely.
+ * - Validates input
+ * - Removes common secret keys
+ * - Removes functions/undefined values
+ * - Enforces a size limit
+ *
+ * @param {object} options - Plain object of options to save
+ * @param {object} [opts] - Optional settings: { key: 'options', maxBytes: 100000 }
+ * @returns {boolean} true on success, false on failure
+ */
+function saveOptions(options, opts = {}) {
+  const storageKey = opts.key || 'options';
+  const maxBytes = typeof opts.maxBytes === 'number' ? opts.maxBytes : 100_000;
 
-saveOptions(options) {
-  localStorage.setItem('options', JSON.stringify(options));
+  if (!options || typeof options !== 'object' || Array.isArray(options)) {
+    console.warn('saveOptions: expected plain object');
+    return false;
+  }
+
+  // Shallow copy to avoid mutating caller object
+  const copy = { ...options };
+
+  // Remove common sensitive keys if present
+  const sensitive = ['apiKey', 'apiSecret', 'clientSecret', 'password', 'token', 'accessToken'];
+  for (const k of sensitive) {
+    if (k in copy) delete copy[k];
+  }
+
+  // Replacer to drop functions and undefined
+  const replacer = (key, value) => {
+    if (typeof value === 'function' || typeof value === 'undefined') return undefined;
+    return value;
+  };
+
+  try {
+    const json = JSON.stringify(copy, replacer);
+
+    // Size guard
+    if (new Blob([json]).size > maxBytes) {
+      console.warn('saveOptions: payload too large to store');
+      return false;
+    }
+
+    localStorage.setItem(storageKey, json);
+    return true;
+  } catch (e) {
+    console.error('saveOptions: failed to serialize or store options', e);
+    return false;
+  }
 }
 
+
 document.addEventListener('DOMContentLoaded', () => {
+
 
   setTimeout(() => requestAnimationFrame(guiSizeChange), 100);
 
