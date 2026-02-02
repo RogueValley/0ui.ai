@@ -563,37 +563,7 @@ async function establishConnection() {
 /* ------------------------------
    LOAD ACTIVE MODEL
 --------------------------------*/
-async function loadActiveModels() {
-  const apiUrl = apiUrlInput.value.trim();
-  const modelsactive = document.getElementById('models-active');
-
-  try {
-    await establishConnection();
-    if (!connectionReady) throw new Error("No connection");
-
-    const res = await makeApiRequest(URLadd("/api/ps", apiUrl), "GET");
-    if (!res.ok) throw new Error("Bad response");
-
-    const models = await res.json();
-
-    let selected = models.models[0].name;
-    if (selected === "[EMPTY]") throw new Error("Empty model list");
-
-    for (const m of models.models) {
-      if (m.name === savedModelSelected) {
-        selected = savedModelSelected;
-        break;
-      }
-    }
-
-    modelsSelectDropdown.value = selected;
-    savedModelSelected = selected;
-    modelsactive.textContent = selected;
-  } finally {
-    loadingIndicator.style.display = 'none';
-  }
-}
-
+loadActiveModels
 /* ------------------------------
    LOAD ALL MODELS
 --------------------------------*/
@@ -613,7 +583,6 @@ async function loadModels() {
     if (!res.ok) throw new Error("Bad response");
 
     const models = await res.json();
-    if (!Array.isArray(models.models)) throw new Error("Invalid model list");
 
     models.models.forEach(model => {
       if (!model.name.includes("embed")) {
