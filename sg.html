@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Nexus Orchestrator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>::-webkit-scrollbar{width:8px}::-webkit-scrollbar-track{background:#111827}::-webkit-scrollbar-thumb{background:#374151;border-radius:4px}.mono{font-family:monospace}</style>
+</head>
+<body class="bg-gray-950 text-gray-200 h-screen flex flex-col overflow-hidden">
+
+<header class="bg-gray-900 border-b border-gray-800 p-4 flex justify-between items-center">
+<div class="flex items-center gap-3">
+    <div id="statusLed" class="w-3 h-3 bg-gray-500 rounded-full"></div>
+    <h1 class="font-bold text-lg">NEXUS</h1>
+</div>
+<div class="flex gap-2">
+    <button id="serverBtn" class="text-xs border border-gray-700 px-3 py-1 rounded hover:bg-gray-800">🌐 SERVER</button>
+    <button id="settingsBtn" class="text-xs border border-gray-700 px-3 py-1 rounded hover:bg-gray-800">⚙ LLM</button>
+    <button id="routesBtn" class="text-xs border border-gray-700 px-3 py-1 rounded hover:bg-gray-800">🔗 ENDPOINTS</button>
+    <div id="status" class="text-xs mono text-gray-500 px-3 py-1 border border-gray-800 rounded">DISCONNECTED</div>
+</div>
+</header>
+
+<!-- Server Modal -->
+<div id="serverModal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+<div class="bg-gray-900 border border-gray-700 rounded-lg w-[400px]">
+    <div class="p-4 border-b border-gray-800 flex justify-between"><h2 class="font-bold">Server Connection</h2><button class="closeModal text-2xl">&times;</button></div>
+    <div class="p-4">
+        <label class="text-xs text-gray-500">Server URL</label>
+        <input id="serverUrl" class="w-full bg-gray-950 border border-gray-700 rounded p-2 text-sm mono mt-1" placeholder="http://localhost:3000">
+        <p class="text-xs text-gray-600 mt-2">Include protocol (http/https) and port</p>
+        <div class="flex gap-2 mt-4">
+            <button id="testConnection" class="flex-1 bg-gray-800 border border-gray-700 py-2 rounded text-sm">Test</button>
+            <button id="saveServer" class="flex-1 bg-blue-600 py-2 rounded text-sm">Save</button>
+        </div>
+        <div id="connectionStatus" class="mt-3 text-xs text-center"></div>
+    </div>
+</div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settingsModal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+<div class="bg-gray-900 border border-gray-700 rounded-lg w-[700px] max-h-[80vh] overflow-auto">
+    <div class="p-4 border-b border-gray-800 flex justify-between"><h2 class="font-bold">LLM Settings</h2><button class="closeModal text-2xl">&times;</button></div>
+    <div class="p-4 grid grid-cols-2 gap-3" id="settingsGrid"></div>
+    <div class="p-4 border-t border-gray-800"><button id="saveSettings" class="bg-blue-600 px-4 py-2 rounded text-sm">Save</button></div>
+</div>
+</div>
+
+<!-- Routes Modal -->
+<div id="routesModal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+<div class="bg-gray-900 border border-gray-700 rounded-lg w-[800px] max-h-[80vh] overflow-hidden flex flex-col">
+    <div class="p-4 border-b border-gray-800 flex justify-between"><h2 class="font-bold">API Endpoints</h2><button class="closeModal text-2xl">&times;</button></div>
+    <div class="flex flex-1 overflow-hidden">
+        <div class="w-1/2 border-r border-gray-800 p-4 overflow-auto"><h3 class="text-xs text-gray-500 mb-2">BLUEPRINTS</h3><div id="bpTree" class="mono text-sm"></div></div>
+        <div class="w-1/2 p-4 overflow-auto">
+            <h3 class="text-xs text-gray-500 mb-2">ACTIVE ENDPOINTS</h3><div id="routesList" class="space-y-2 mb-4"></div>
+            <div class="border-t border-gray-800 pt-4">
+                <input id="newArn" class="w-full bg-gray-950 border border-gray-700 rounded p-2 text-xs mono mb-2" placeholder="Select blueprint..." readonly>
+                <input id="newPath" class="w-full bg-gray-950 border border-gray-700 rounded p-2 text-xs mono mb-2" placeholder="/endpoint-path">
+                <select id="newMethod" class="w-full bg-gray-950 border border-gray-700 rounded p-2 text-xs mb-2"><option>POST</option><option>GET</option><option>ALL</option></select>
+                <button id="createRoute" class="w-full bg-blue-600 py-2 rounded text-sm">CREATE</button>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<div class="flex flex-1 overflow-hidden">
+<div class="w-1/3 min-w-[350px] bg-gray-900 border-r border-gray-800 p-4 overflow-auto">
+    <div class="mb-6">
+        <div class="flex justify-between mb-2"><span class="text-xs text-blue-400 font-bold">1. BLUEPRINT</span><label class="text-xs underline cursor-pointer">Load<input type="file" id="fileIn" accept=".json" class="hidden"></label></div>
+        <textarea id="bpInput" class="w-full h-40 bg-gray-950 border border-gray-800 rounded p-2 text-xs mono resize-none" placeholder="Paste JSON..."></textarea>
+        <input id="pathIn" class="w-full bg-gray-950 border border-gray-800 rounded p-2 text-xs mono mt-2" placeholder="Path: networking/rss-reader">
+        <input id="verIn" class="w-full bg-gray-950 border border-gray-800 rounded p-2 text-xs mono mt-2" placeholder="Version (default: latest)">
+        <button id="importBtn" class="w-full bg-gray-800 border border-gray-700 py-2 rounded text-xs mt-2">IMPORT</button>
+        <div id="arnOut" class="hidden mt-2 p-2 bg-gray-950 border border-gray-800 rounded text-xs text-green-500 mono break-all"></div>
+    </div>
+    <div>
+        <span class="text-xs text-purple-400 font-bold">2. EXECUTE</span>
+        <input id="runArn" class="w-full bg-gray-950 border border-gray-800 rounded p-2 text-xs mono mt-2" placeholder="ARN">
+        <input id="maxDepth" type="number" value="10" class="w-full bg-gray-950 border border-gray-800 rounded p-2 text-xs mono mt-2">
+        <textarea id="inputPayload" class="w-full h-16 bg-gray-950 border border-gray-800 rounded p-2 text-xs mono mt-2 resize-none" placeholder='{"key":"value"}'></textarea>
+        <button id="runBtn" class="w-full bg-blue-600 py-3 rounded font-bold mt-2">RUN</button>
+    </div>
+</div>
+<div class="flex-1 flex flex-col bg-gray-950">
+    <div class="flex-1 p-4 flex flex-col overflow-hidden">
+        <span class="text-xs text-gray-500 mb-2">LOGS</span>
+        <div id="logs" class="flex-1 bg-black border border-gray-800 rounded p-3 overflow-auto mono text-sm"></div>
+    </div>
+    <div class="h-1/3 border-t border-gray-800 bg-gray-900 p-4 flex flex-col">
+        <span class="text-xs text-gray-500 mb-2">STATE</span>
+        <pre id="state" class="flex-1 bg-gray-950 rounded border border-gray-800 p-2 text-xs mono text-green-400 overflow-auto"></pre>
+    </div>
+</div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const STORAGE_KEY = 'nexus_server_url';
+
+let serverUrl = localStorage.getItem(STORAGE_KEY) || 'http://localhost:3000';
+let activeArn = null;
+
+// Initialize server URL input
+$('serverUrl').value = serverUrl;
+
+// API helper
+async function api(method, endpoint, data) {
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (data) opts.body = JSON.stringify(data);
+    const res = await fetch(serverUrl + endpoint, opts);
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Request failed');
+    return json;
+}
+
+// Connection test
+async function testConnection() {
+    const url = $('serverUrl').value.trim().replace(/\/+$/, '');
+    $('connectionStatus').textContent = 'Testing...';
+    $('connectionStatus').className = 'mt-3 text-xs text-center text-yellow-500';
+    try {
+        const res = await fetch(url + '/health');
+        const data = await res.json();
+        if (data.status === 'ok') {
+            $('connectionStatus').textContent = '✓ Connected (v' + (data.version || '?') + ')';
+            $('connectionStatus').className = 'mt-3 text-xs text-center text-green-500';
+            return true;
+        }
+    } catch (e) {}
+    $('connectionStatus').textContent = '✗ Connection failed';
+    $('connectionStatus').className = 'mt-3 text-xs text-center text-red-500';
+    return false;
+}
+
+// Save server
+async function saveServer() {
+    const url = $('serverUrl').value.trim().replace(/\/+$/, '');
+    if (await testConnection()) {
+        serverUrl = url;
+        localStorage.setItem(STORAGE_KEY, serverUrl);
+        $('serverModal').classList.add('hidden');
+        updateConnectionStatus();
+    }
+}
+
+// Update status indicator
+async function updateConnectionStatus() {
+    try {
+        await fetch(serverUrl + '/health');
+        $('statusLed').className = 'w-3 h-3 bg-green-500 rounded-full shadow-[0_0_10px_#22c55e]';
+        $('status').textContent = 'CONNECTED';
+        $('status').className = 'text-xs mono text-green-500 px-3 py-1 border border-green-900 rounded';
+    } catch (e) {
+        $('statusLed').className = 'w-3 h-3 bg-red-500 rounded-full';
+        $('status').textContent = 'DISCONNECTED';
+        $('status').className = 'text-xs mono text-red-500 px-3 py-1 border border-red-900 rounded';
+    }
+}
+
+// File load
+$('fileIn').onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = x => { try { $('bpInput').value = JSON.stringify(JSON.parse(x.target.result),null,2); $('pathIn').value = f.name.replace('.json',''); } catch(e) { alert('Invalid JSON'); }};
+    r.readAsText(f);
+};
+
+// Import
+$('importBtn').onclick = async () => {
+    const bp = $('bpInput').value, p = $('pathIn').value.trim(), v = $('verIn').value.trim() || 'latest';
+    if (!bp || !p) return alert('Need JSON and path');
+    try {
+        const d = await api('POST', '/api/blueprint/import', { blueprint: JSON.parse(bp), path: p, version: v });
+        activeArn = d.arn;
+        $('arnOut').textContent = d.arn;
+        $('arnOut').classList.remove('hidden');
+        $('runArn').value = d.arn;
+    } catch (e) { alert(e.message); }
+};
+
+// Run
+$('runBtn').onclick = async () => {
+    const arn = $('runArn').value.trim(); if (!arn) return alert('Need ARN');
+    let input = {};
+    try { if ($('inputPayload').value.trim()) input = JSON.parse($('inputPayload').value); } catch (e) { return alert('Invalid input JSON'); }
+    $('logs').innerHTML = '<div class="text-blue-400">Running...</div>';
+    $('state').textContent = '';
+    try {
+        const d = await api('POST', '/api/neo/run', { arn, maxDepth: +$('maxDepth').value || 10, input });
+        renderLogs(d.neoNode);
+        $('state').textContent = JSON.stringify(d.neoNode, null, 2);
+    } catch (e) { $('logs').innerHTML += '<div class="text-red-500">' + e.message + '</div>'; }
+};
+
+function renderLogs(node) {
+    $('logs').innerHTML = '';
+    Object.values(node.properties).forEach(arr => {
+        if (!Array.isArray(arr)) return;
+        arr.forEach(e => {
+            if (!e.nodeRef) return;
+            let h = '<div class="mb-3 pl-2 border-l-2 border-gray-700">';
+            h += '<div class="text-[10px] text-gray-600">' + (e.timestamp||'').split('T')[1]?.replace('Z','') + ' ' + e.nodeRef + (e.type ? ' ['+e.type+']' : '') + '</div>';
+            if (e.command) h += '<div class="text-blue-400">$ ' + esc(e.command) + '</div>';
+            if (e.stdout) h += '<div class="text-gray-300 whitespace-pre-wrap">' + esc(e.stdout) + '</div>';
+            if (e.response) h += '<div class="text-green-300 whitespace-pre-wrap">' + esc(e.response) + '</div>';
+            if (e.stderr) h += '<div class="text-red-400">' + esc(e.stderr) + '</div>';
+            if (e.error) h += '<div class="text-red-400">' + esc(e.error) + '</div>';
+            h += '</div>';
+            $('logs').innerHTML += h;
+        });
+    });
+}
+function esc(s) { const d = document.createElement('div'); d.textContent = s||''; return d.innerHTML; }
+
+// Server modal
+$('serverBtn').onclick = () => { $('serverModal').classList.remove('hidden'); $('connectionStatus').textContent = ''; };
+$('testConnection').onclick = testConnection;
+$('saveServer').onclick = saveServer;
+
+// Settings modal
+$('settingsBtn').onclick = async () => {
+    $('settingsModal').classList.remove('hidden');
+    try {
+        const p = await api('GET', '/api/settings/llm');
+        $('settingsGrid').innerHTML = Object.entries(p).map(([k,v]) => 
+            '<div class="bg-gray-950 border border-gray-800 rounded p-3"><div class="flex justify-between mb-2"><span class="text-sm font-bold">' + v.name + '</span><label><input type="checkbox" id="'+k+'-en" '+(v.enabled?'checked':'')+'>On</label></div>' +
+            '<input id="'+k+'-key" class="w-full bg-gray-900 border border-gray-700 rounded p-1 text-xs mono mb-1" placeholder="API Key" value="'+(v.apiKey||'')+'" type="password">' +
+            '<input id="'+k+'-url" class="w-full bg-gray-900 border border-gray-700 rounded p-1 text-xs mono mb-1" placeholder="URL" value="'+(v.url||'')+'">' +
+            '<input id="'+k+'-mod" class="w-full bg-gray-900 border border-gray-700 rounded p-1 text-xs mono" placeholder="Model" value="'+(v.defaultModel||'')+'">' +
+            '</div>'
+        ).join('');
+    } catch (e) { alert('Failed to load settings: ' + e.message); }
+};
+
+$('saveSettings').onclick = async () => {
+    const s = {};
+    ['anthropic','openai','ollama1','ollama2','custom1','custom2'].forEach(k => {
+        s[k] = { enabled: $(k+'-en')?.checked, apiKey: $(k+'-key')?.value, url: $(k+'-url')?.value, defaultModel: $(k+'-mod')?.value };
+    });
+    try {
+        await api('POST', '/api/settings/llm', s);
+        $('settingsModal').classList.add('hidden');
+    } catch (e) { alert(e.message); }
+};
+
+// Routes modal
+$('routesBtn').onclick = async () => {
+    $('routesModal').classList.remove('hidden');
+    try {
+        const [bps, rts] = await Promise.all([api('GET', '/api/blueprints'), api('GET', '/api/routes')]);
+        $('bpTree').innerHTML = bps.length ? bps.map(b => '<div class="py-1 px-2 hover:bg-gray-800 cursor-pointer rounded" data-arn="'+b.arn+'">'+b.path+' <span class="text-gray-600 text-[10px]">'+b.version+'</span></div>').join('') : '<div class="text-gray-600">No blueprints</div>';
+        $('bpTree').querySelectorAll('[data-arn]').forEach(el => el.onclick = () => { $('newArn').value = el.dataset.arn; $('newPath').value = '/' + el.dataset.arn.split(':')[2]; });
+        const entries = Object.entries(rts);
+        $('routesList').innerHTML = entries.length ? entries.map(([p,c]) => '<div class="bg-gray-950 border border-gray-800 rounded p-2 flex justify-between"><div><span class="text-blue-400 text-xs">'+(c.method||'POST')+'</span> <span class="mono text-xs">/api/exec'+p+'</span><div class="text-[10px] text-gray-600">'+c.arn+'</div></div><button class="text-red-500 text-xs" data-del="'+p+'">✕</button></div>').join('') : '<div class="text-gray-600">No endpoints</div>';
+        $('routesList').querySelectorAll('[data-del]').forEach(el => el.onclick = async () => { 
+            try { await api('DELETE', '/api/routes' + el.dataset.del); $('routesBtn').click(); } catch (e) { alert(e.message); }
+        });
+    } catch (e) { alert('Failed to load: ' + e.message); }
+};
+
+$('createRoute').onclick = async () => {
+    const arn = $('newArn').value, p = $('newPath').value, m = $('newMethod').value;
+    if (!arn || !p) return alert('Need ARN and path');
+    try {
+        await api('POST', '/api/routes', { arn, path: p, method: m });
+        $('newArn').value = ''; $('newPath').value = '';
+        $('routesBtn').click();
+    } catch (e) { alert(e.message); }
+};
+
+// Close modals
+document.querySelectorAll('.closeModal').forEach(btn => btn.onclick = () => {
+    btn.closest('[id$="Modal"]').classList.add('hidden');
+});
+
+// Init
+updateConnectionStatus();
+setInterval(updateConnectionStatus, 30000);
+</script>
+</body>
+</html>
